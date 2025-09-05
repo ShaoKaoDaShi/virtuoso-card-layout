@@ -1,0 +1,254 @@
+/* 演示应用样式 */
+.demo-app {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* 头部样式 */
+.demo-header {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 20px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.demo-header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  text-align: center;
+}
+
+.demo-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.demo-subtitle {
+  font-size: 1.1rem;
+  color: #666;
+  margin: 0 0 20px 0;
+  font-weight: 400;
+}
+
+/* 导航样式 */
+.demo-nav {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.demo-nav-button {
+  padding: 10px 20px;
+  border: 2px solid #667eea;
+  background: transparent;
+  color: #667eea;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.demo-nav-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.demo-nav-button.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.demo-nav-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.demo-nav-button:hover::before {
+  left: 100%;
+}
+
+/* 主内容样式 */
+.demo-main {
+  flex: 1;
+  background: white;
+  margin: 20px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* 底部样式 */
+.demo-footer {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 16px 0;
+  margin-top: auto;
+}
+
+.demo-footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  text-align: center;
+}
+
+.demo-footer p {
+  margin: 0 0 8px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.demo-features {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.demo-feature {
+  font-size: 12px;
+  color: #888;
+  padding: 4px 8px;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .demo-title {
+    font-size: 2rem;
+  }
+  
+  .demo-subtitle {
+    font-size: 1rem;
+  }
+  
+  .demo-nav {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .demo-nav-button {
+    width: 200px;
+  }
+  
+  .demo-main {
+    margin: 10px;
+  }
+  
+  .demo-features {
+    gap: 8px;
+  }
+  
+  .demo-feature {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .demo-header-content,
+  .demo-footer-content {
+    padding: 0 15px;
+  }
+  
+  .demo-title {
+    font-size: 1.8rem;
+  }
+  
+  .demo-nav-button {
+    width: 160px;
+    padding: 8px 16px;
+  }
+}
+
+/* 全局重置 */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+}
+
+/* 加载动画 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.demo-main {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* 按钮悬停效果 */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(102, 126, 234, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+  }
+}
+
+.demo-nav-button.active {
+  animation: pulse 2s infinite;
+}
