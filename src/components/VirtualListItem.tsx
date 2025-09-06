@@ -99,44 +99,32 @@ export const VirtualListItemComponent: React.FC<VirtualListItemProps> = memo(({
       $isClickable={isClickable}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      className={createClassName('virtual-list-item', className)}
-      role={isClickable ? 'button' : undefined}
+      className={createClassName("virtual-list-item", className)}
+      role={isClickable ? "button" : undefined}
       tabIndex={isClickable ? 0 : undefined}
       aria-label={isClickable ? `列表项 ${index + 1}` : undefined}
+      uniq-card-key={item.metadata?.lineNumber ?? 0}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-        {showIndex && (
-          <ItemIndex>
-            {index + 1}
-          </ItemIndex>
-        )}
-        
+      <div style={{ display: "flex", alignItems: "flex-start" }}>
+        {showIndex && <ItemIndex>{index + 1}</ItemIndex>}
+
         <div style={{ flex: 1, minWidth: 0 }}>
           <ItemContent>
-            {typeof item.content === 'string' ? (
+            {typeof item.content === "string" ? (
               <div dangerouslySetInnerHTML={{ __html: item.content }} />
             ) : (
               item.content
             )}
           </ItemContent>
-          
+
           {item.metadata && Object.keys(item.metadata).length > 0 && (
             <ItemMeta>
-              {item.height && (
-                <MetaItem>
-                  📏 高度: {item.height}px
-                </MetaItem>
-              )}
-              {item.metadata.type && (
-                <MetaItem>
-                  🏷️ 类型: {item.metadata.type}
-                </MetaItem>
-              )}
+              {item.height && <MetaItem>📏 高度: {item.height}px</MetaItem>}
+              {item.metadata.type && <MetaItem>🏷️ 类型: {item.metadata.type}</MetaItem>}
               {item.metadata.timestamp && (
-                <MetaItem>
-                  🕒 {new Date(item.metadata.timestamp).toLocaleTimeString()}
-                </MetaItem>
+                <MetaItem>🕒 {new Date(item.metadata.timestamp).toLocaleTimeString()}</MetaItem>
               )}
+              {item.metadata.lineNumber !== undefined && <MetaItem>🏷️ lineNumber: {item.metadata.lineNumber}</MetaItem>}
             </ItemMeta>
           )}
         </div>

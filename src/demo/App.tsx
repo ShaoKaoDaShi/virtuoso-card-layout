@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { BasicExample } from '../examples/BasicExample';
 import { AdvancedExample } from '../examples/AdvancedExample';
 import './App.css';
+import { CardProvider } from "@/components/common/Context";
 
 /**
  * 演示应用主组件
@@ -13,34 +14,28 @@ export const App: React.FC = () => {
     <div className="demo-app">
       <header className="demo-header">
         <div className="demo-header-content">
-          <h1 className="demo-title">
-            🚀 Virtuoso Card Layout
-          </h1>
-          <p className="demo-subtitle">
-            React虚拟滚动列表与卡片列表并排布局解决方案
-          </p>
-          
+          <h1 className="demo-title">🚀 Virtuoso Card Layout</h1>
+          <p className="demo-subtitle">React虚拟滚动列表与卡片列表并排布局解决方案</p>
+
           <nav className="demo-nav">
-            <button 
-              className={`demo-nav-button ${currentExample === 'basic' ? 'active' : ''}`}
-              onClick={() => setCurrentExample('basic')}
+            <button
+              className={`demo-nav-button ${currentExample === "basic" ? "active" : ""}`}
+              onClick={() => setCurrentExample("basic")}
             >
               基础示例
             </button>
-            <button 
-              className={`demo-nav-button ${currentExample === 'advanced' ? 'active' : ''}`}
-              onClick={() => setCurrentExample('advanced')}
+            <button
+              className={`demo-nav-button ${currentExample === "advanced" ? "active" : ""}`}
+              onClick={() => setCurrentExample("advanced")}
             >
               高级示例
             </button>
           </nav>
         </div>
       </header>
-
-      <main className="demo-main">
-        {currentExample === 'basic' ? <BasicExample /> : <AdvancedExample />}
-      </main>
-
+      <CardProvider>
+        <main className="demo-main">{currentExample === "basic" ? <BasicExample /> : <AdvancedExample />}</main>
+      </CardProvider>
       <footer className="demo-footer">
         <div className="demo-footer-content">
           <p>

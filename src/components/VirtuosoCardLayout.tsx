@@ -1,14 +1,16 @@
-import React, { useMemo, useCallback } from 'react';
-import { Virtuoso } from 'react-virtuoso';
-import styled, { ThemeProvider } from 'styled-components';
-import { VirtuosoCardLayoutProps, VirtualListItem, CardData } from '@/types';
-import { useHeightSync } from '@/hooks/useHeightSync';
-import { useCardManagement } from '@/hooks/useCardManagement';
-import { useResponsive } from '@/hooks/useResponsive';
-import { defaultTheme, mergeTheme, generateCSSVariables } from '@/utils/theme';
-import { createClassName } from '@/utils/helpers';
-import { CardList } from './CardList';
-import { VirtualListItemComponent } from './VirtualListItem';
+import React, { useMemo, useCallback, useEffect } from "react";
+import { Virtuoso } from "react-virtuoso";
+import styled, { ThemeProvider } from "styled-components";
+import { VirtuosoCardLayoutProps, VirtualListItem, CardData } from "@/types";
+import { useHeightSync } from "@/hooks/useHeightSync";
+import { useCardManagement } from "@/hooks/useCardManagement";
+import { useResponsive } from "@/hooks/useResponsive";
+import { defaultTheme, mergeTheme, generateCSSVariables } from "@/utils/theme";
+import { createClassName } from "@/utils/helpers";
+import { CardList } from "./CardList";
+import { VirtualListItemComponent } from "./VirtualListItem";
+import { CardProvider, useCardContext } from "./common/Context";
+import { isEqual } from "lodash-es";
 
 const Container = styled.div<{ $cssVariables: Record<string, string> }>`
   display: flex;
@@ -45,7 +47,6 @@ const VirtuosoContainer = styled.div<{ $width: string | number; $gap: string | n
 const CardContainer = styled.div<{ $width: string | number }>`
   flex: 0 0 ${(props) => (typeof props.$width === "number" ? `${props.$width}px` : props.$width)};
   height: 100%;
-  overflow: hidden;
 
   @media (max-width: 768px) {
     flex: 1;
@@ -75,6 +76,7 @@ export const VirtuosoCardLayout: React.FC<VirtuosoCardLayoutProps> = ({
   // 合并主题
   const mergedTheme = useMemo(() => mergeTheme(defaultTheme, customTheme), [customTheme]);
   const [customScrollParent, setCustomScrollParent] = React.useState(null);
+  const { cardsWrappers, renderedItems, setRenderedItems, setNeedRenderedCards, needRenderedCards } = useCardContext();
 
   // 生成CSS变量
   const cssVariables = useMemo(() => generateCSSVariables(mergedTheme), [mergedTheme]);
@@ -156,13 +158,32 @@ export const VirtuosoCardLayout: React.FC<VirtuosoCardLayoutProps> = ({
             {...virtuosoConfig}
             style={{ height: "100%" }}
             customScrollParent={customScrollParent}
+            // itemsRendered={(items) => {
+            //   const vItems = items.map((item) => item.data!);
+            //   console.log("🚀 ~ vItems:", vItems);
+            //   // setRenderedItems(vItems);
+            // }}
+            rangeChanged={(range) => {
+              const vItems = items.slice(range.startIndex, range.endIndex + 1);
+              const same = isEqual(vItems, renderedItems);
+              console.log("🚀 ~ same:", same, vItems, renderedItems);
+              if (same) return;
+              setRenderedItems(vItems);
+              const renderedItemsLine = vItems.map((item) => item.metadata?.lineNumber);
+              const newNeedRenderedCards = visibleCards.filter((card) => renderedItemsLine.includes(card.lineNumber));
+
+              const sameCards = isEqual(needRenderedCards, newNeedRenderedCards);
+              if (sameCards) return;
+              console.log("🚀 ~ needRenderedCards:", needRenderedCards, newNeedRenderedCards, same, visibleCards);
+              setNeedRenderedCards(newNeedRenderedCards);
+            }}
           />
         </VirtuosoContainer>
 
         <CardContainer $width={finalLayout.cardListWidth}>
           <CardList
             ref={cardListRef}
-            cards={visibleCards}
+            cards={needRenderedCards}
             alignmentStrategy={alignmentStrategy}
             theme={mergedTheme}
             cardRenderer={cardRenderer}
@@ -185,6 +206,6 @@ export const createVirtuosoCardLayoutRef = () => {
     removeCard: (_cardId: string) => {},
     updateCard: (_cardId: string, _updates: Partial<CardData>) => {},
     clearCards: () => {},
-    getHeight: () => 0
+    getHeight: () => 0,
   };
 };

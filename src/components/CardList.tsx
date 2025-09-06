@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { CardData, Theme, CardAlignmentStrategy } from '@/types';
 import { calculateOptimalCardPosition, createClassName } from '@/utils/helpers';
 import { Card } from './Card';
+import { useCardContext } from "./common/Context";
 
 const Container = styled.div`
   position: relative;
@@ -31,13 +32,13 @@ const Container = styled.div`
   }
 `;
 
-const CardWrapper = styled.div<{ 
-  $strategy: CardAlignmentStrategy; 
+const CardWrapper = styled.div<{
+  $strategy: CardAlignmentStrategy;
   $position?: { x: number; y: number };
   $isMobile: boolean;
 }>`
-  ${props => {
-    if (props.$strategy === 'overlay' && props.$position) {
+  ${(props) => {
+    if (props.$strategy === "overlay" && props.$position) {
       return `
         position: absolute;
         left: ${props.$position.x}px;
@@ -50,8 +51,8 @@ const CardWrapper = styled.div<{
       margin-bottom: var(--vc-spacing-sm);
     `;
   }}
-  
-  width: ${props => props.$isMobile ? '100%' : 'calc(100% - 16px)'};
+
+  width: ${(props) => (props.$isMobile ? "100%" : "calc(100% - 16px)")};
   max-width: 100%;
 `;
 
@@ -71,9 +72,9 @@ const EmptyIcon = styled.div`
   height: 48px;
   margin-bottom: var(--vc-spacing-md);
   opacity: 0.5;
-  
+
   &::before {
-    content: '📝';
+    content: "📝";
     font-size: 48px;
   }
 `;
@@ -91,166 +92,122 @@ interface CardListProps {
 /**
  * 卡片列表组件 - 管理和渲染所有卡片
  */
-export const CardList = forwardRef<HTMLDivElement, CardListProps>(({
-  cards,
-  alignmentStrategy,
-  theme,
-  cardRenderer,
-  onCardClick,
-  isMobile,
-  className
-}, ref) => {
-  const [cardPositions, setCardPositions] = useState<Map<string, { x: number; y: number }>>(new Map());
-  const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
+export const CardList = forwardRef<HTMLDivElement, CardListProps>(
+  ({ cards, alignmentStrategy, theme, cardRenderer, onCardClick, isMobile, className }, ref) => {
+    const [cardPositions, setCardPositions] = useState<Map<string, { x: number; y: number }>>(new Map());
+    const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
+    const { cardsWrappers, needRenderedCards } = useCardContext();
+    // 监听容器尺寸变化
+    useEffect(() => {
+      if (!ref || typeof ref === "function") return;
 
-  // 监听容器尺寸变化
-  useEffect(() => {
-    if (!ref || typeof ref === 'function') return;
-    
-    const container = ref.current;
-    if (!container) return;
+      const container = ref.current;
+      if (!container) return;
 
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        setContainerDimensions({ width, height });
-      }
-    });
+      const resizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const { width, height } = entry.contentRect;
+          setContainerDimensions({ width, height });
+        }
+      });
 
-    resizeObserver.observe(container);
-    
-    // 初始化尺寸
-    const rect = container.getBoundingClientRect();
-    setContainerDimensions({ width: rect.width, height: rect.height });
+      resizeObserver.observe(container);
 
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [ref]);
+      // 初始化尺寸
+      const rect = container.getBoundingClientRect();
+      setContainerDimensions({ width: rect.width, height: rect.height });
 
-  // 计算卡片位置（用于overlay策略）
-  const calculateCardPositions = useCallback(() => {
-    if (alignmentStrategy !== 'overlay' && alignmentStrategy !== 'hybrid') {
-      return new Map();
-    }
+      return () => {
+        resizeObserver.disconnect();
+      };
+    }, [ref]);
 
-    const positions = new Map<string, { x: number; y: number }>();
-    const existingRects: Array<{ x: number; y: number; width: number; height: number }> = [];
-    
-    cards.forEach((card, index) => {
-      const cardWidth = Math.min(280, containerDimensions.width - 16);
-      const cardHeight = 120; // 估算卡片高度
-      const preferredY = (card.lineNumber || index) * 24; // 基于行号计算Y位置
-      
-      // 对于hybrid策略，只有高优先级卡片使用overlay
-      const shouldUseOverlay = alignmentStrategy === 'overlay' || 
-        (alignmentStrategy === 'hybrid' && card.priority === 'high');
-      
-      if (shouldUseOverlay) {
-        const optimalPosition = calculateOptimalCardPosition(
-          { width: cardWidth, height: cardHeight, preferredY },
-          existingRects,
-          containerDimensions.width,
-          containerDimensions.height
-        );
-        
-        positions.set(card.id, optimalPosition);
-        existingRects.push({
-          x: optimalPosition.x,
-          y: optimalPosition.y,
-          width: cardWidth,
-          height: cardHeight
-        });
-      }
-    });
+    // 计算卡片位置（用于overlay策略）
+    // const calculateCardPositions = useCallback(() => {
+    //   if (alignmentStrategy !== "overlay" && alignmentStrategy !== "hybrid") {
+    //     return new Map();
+    //   }
 
-    return positions;
-  }, [cards, alignmentStrategy, containerDimensions]);
+    //   const positions = new Map<string, { x: number; y: number }>();
+    //   const existingRects: Array<{ x: number; y: number; width: number; height: number }> = [];
 
-  // 更新卡片位置
-  useEffect(() => {
-    const positions = calculateCardPositions();
-    setCardPositions(positions);
-  }, [calculateCardPositions]);
+    //   cards.forEach((card, index) => {
+    //     const cardWidth = Math.min(280, containerDimensions.width - 16);
+    //     const cardHeight = 120; // 估算卡片高度
+    //     const preferredY = (card.lineNumber || index) * 24; // 基于行号计算Y位置
 
-  // 按策略分组卡片
-  const { inlineCards, overlayCards } = useMemo(() => {
-    if (alignmentStrategy === 'inline') {
-      return { inlineCards: cards, overlayCards: [] };
-    }
-    
-    if (alignmentStrategy === 'overlay') {
-      return { inlineCards: [], overlayCards: cards };
-    }
-    
-    // hybrid策略：高优先级使用overlay，其他使用inline
-    return {
-      inlineCards: cards.filter(card => card.priority !== 'high'),
-      overlayCards: cards.filter(card => card.priority === 'high')
-    };
-  }, [cards, alignmentStrategy]);
+    //     // 对于hybrid策略，只有高优先级卡片使用overlay
+    //     const shouldUseOverlay =
+    //       alignmentStrategy === "overlay" || (alignmentStrategy === "hybrid" && card.priority === "high");
 
-  // 默认卡片渲染器
-  const defaultCardRenderer = useCallback((card: CardData) => (
-    <Card
-      key={card.id}
-      card={card}
-      theme={theme}
-      onClick={() => onCardClick?.(card)}
-      isMobile={isMobile}
-    />
-  ), [theme, onCardClick, isMobile]);
+    //     if (shouldUseOverlay) {
+    //       const optimalPosition = calculateOptimalCardPosition(
+    //         { width: cardWidth, height: cardHeight, preferredY },
+    //         existingRects,
+    //         containerDimensions.width,
+    //         containerDimensions.height
+    //       );
 
-  const renderCard = cardRenderer || defaultCardRenderer;
+    //       positions.set(card.id, optimalPosition);
+    //       existingRects.push({
+    //         x: optimalPosition.x,
+    //         y: optimalPosition.y,
+    //         width: cardWidth,
+    //         height: cardHeight,
+    //       });
+    //     }
+    //   });
 
-  // 空状态
-  if (cards.length === 0) {
-    return (
-      <Container 
-        ref={ref} 
-        className={createClassName('card-list', 'card-list--empty', className)}
-      >
-        <EmptyState>
-          <EmptyIcon />
-          <div>暂无卡片</div>
-          <div style={{ fontSize: '12px', marginTop: '4px' }}>
-            卡片将显示在这里
-          </div>
-        </EmptyState>
-      </Container>
+    //   return positions;
+    // }, [cards, alignmentStrategy, containerDimensions]);
+
+    // 更新卡片位置
+    // useEffect(() => {
+    //   const positions = calculateCardPositions();
+    //   setCardPositions(positions);
+    // }, [calculateCardPositions]);
+
+    // 默认卡片渲染器
+    const defaultCardRenderer = useCallback(
+      (card: CardData) => (
+        <Card key={card.id} card={card} theme={theme} onClick={() => onCardClick?.(card)} isMobile={isMobile} />
+      ),
+      [theme, onCardClick, isMobile]
     );
-  }
 
-  return (
-    <Container 
-      ref={ref} 
-      className={createClassName('card-list', `card-list--${alignmentStrategy}`, className)}
-    >
-      {/* 内联卡片 */}
-      {inlineCards.map((card) => (
-        <CardWrapper
-          key={card.id}
-          $strategy="inline"
-          $isMobile={isMobile}
-        >
-          {renderCard(card)}
-        </CardWrapper>
-      ))}
-      
-      {/* 覆盖层卡片 */}
-      {overlayCards.map((card) => {
-        const position = cardPositions.get(card.id);
-        return (
+    const renderCard = cardRenderer || defaultCardRenderer;
+
+    // 空状态
+    if (cards.length === 0) {
+      return (
+        <Container ref={ref} className={createClassName("card-list", "card-list--empty", className)}>
+          <EmptyState>
+            <EmptyIcon />
+            <div>暂无卡片</div>
+            <div style={{ fontSize: "12px", marginTop: "4px" }}>卡片将显示在这里</div>
+          </EmptyState>
+        </Container>
+      );
+    }
+
+    return (
+      <Container ref={ref} className={createClassName("card-list", `card-list--${alignmentStrategy}`, className)}>
+        {/* 内联卡片 */}
+        {needRenderedCards.map((card, index) => (
           <CardWrapper
             key={card.id}
-            $strategy="overlay"
-            $position={position}
+            $strategy="inline"
             $isMobile={isMobile}
+            ref={(el) => {
+              if (el) {
+                cardsWrappers[card?.lineNumber ?? 0] = el;
+              }
+            }}
           >
             {renderCard(card)}
           </CardWrapper>
-        );
-      })}
-    </Container>
-  );
-});
+        ))}
+      </Container>
+    );
+  }
+);

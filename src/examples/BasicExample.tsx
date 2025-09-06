@@ -59,14 +59,14 @@ export const BasicExample: React.FC = () => {
 
   // 处理项目点击
   const handleItemClick = useCallback((item: VirtualListItem, index: number) => {
-    console.log('点击了项目:', item, '索引:', index);
-    alert(`点击了第 ${index + 1} 项`);
+    console.log("点击了项目:", item, "索引:", index);
+    // alert(`点击了第 ${index + 1} 项`);
   }, []);
 
   // 处理卡片点击
   const handleCardClick = useCallback((card: CardData) => {
-    console.log('点击了卡片:', card);
-    alert(`点击了卡片: ${card.type} - ${card.id}`);
+    console.log("点击了卡片:", card);
+    // alert(`点击了卡片: ${card.type} - ${card.id}`);
   }, []);
 
   // 处理滚动

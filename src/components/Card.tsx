@@ -178,35 +178,20 @@ export const Card: React.FC<CardProps> = memo(({
       role="button"
       tabIndex={0}
       aria-label={`${getCardTypeDisplayName(card.type)}卡片，优先级：${getCardPriorityDisplayName(card.priority)}`}
+      uniq-line-key={card.lineNumber}
     >
       <CardHeader>
-        <CardType $type={card.type}>
-          {getCardTypeDisplayName(card.type)}
-        </CardType>
-        <CardPriority $priority={card.priority}>
-          {getCardPriorityDisplayName(card.priority)}
-        </CardPriority>
+        <CardType $type={card.type}>{getCardTypeDisplayName(card.type)}</CardType>
+        <CardPriority $priority={card.priority}>{getCardPriorityDisplayName(card.priority)}</CardPriority>
       </CardHeader>
-      
+
       <CardContent>
-        {typeof card.content === 'string' ? (
-          <div dangerouslySetInnerHTML={{ __html: card.content }} />
-        ) : (
-          card.content
-        )}
+        {typeof card.content === "string" ? <div dangerouslySetInnerHTML={{ __html: card.content }} /> : card.content}
       </CardContent>
-      
+
       <CardFooter>
-        <div>
-          {card.lineNumber && (
-            <LineNumber>
-              行 {card.lineNumber}
-            </LineNumber>
-          )}
-        </div>
-        <CardId>
-          #{card.id.slice(-6)}
-        </CardId>
+        <div>{card.lineNumber && <LineNumber>行 {card.lineNumber}</LineNumber>}</div>
+        <CardId>#{card.id.slice(-6)}</CardId>
       </CardFooter>
     </CardContainer>
   );
