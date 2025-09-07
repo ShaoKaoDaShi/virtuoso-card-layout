@@ -1,5 +1,6 @@
 import { CardData, VirtualListItem } from "@/types";
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { computePosition, autoUpdate } from "@floating-ui/dom";
 
 const CardContext = createContext<{
   cards: CardData[];
@@ -45,50 +46,29 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
       };
       const targets = getTargetLines(needRenderedCards);
       const batchUpdateCardsPostion = (cards: CardData[], targets: Map<number, HTMLDivElement>) => {
+        // 对齐的过程中记录所有卡片调整之后的位置，新卡片调整位置的时候需要计算出不跟其他卡片重叠的位置
         const willUpdatePositions = new Map<HTMLDivElement, { moveY: number; area: { start: number; end: number } }>();
         cards.forEach((card) => {
           if (card.lineNumber === undefined) return;
+
           const targetEl = targets.get(card.lineNumber);
           const cardEl = cardsWrappers[card.lineNumber];
           if (targetEl && cardEl) {
-            const targetElRect = targetEl.getBoundingClientRect();
-            const cardElRect = cardEl.getBoundingClientRect();
-            const calculateMoveY = () => {
-              let moveY = targetElRect.top - cardElRect.top;
-              const currentCardArea = {
-                start: cardElRect.top + moveY,
-                end: cardElRect.bottom + moveY,
-              };
-              // 计算当前卡片的区域是否与其他卡片的区域有重叠;
-              Array.from(willUpdatePositions.values()).forEach((item) => {
-                if (currentCardArea.start < item.area.end && currentCardArea.end > item.area.start) {
-                  moveY = item.area.end - cardElRect.top;
-                  currentCardArea.start = cardElRect.top + moveY;
-                  currentCardArea.end = cardElRect.bottom + moveY;
-                }
-              });
-              return moveY;
-            };
-            const moveY = calculateMoveY();
-            const nextCardArea = {
-              start: cardElRect.top + moveY,
-              end: cardElRect.bottom + moveY,
-            };
+            // 计算是否有重叠的情况
 
-            console.log("targetElRect", targetElRect, cardElRect, moveY, nextCardArea);
-            if (moveY !== 0) {
-              willUpdatePositions.set(cardEl, { moveY, area: nextCardArea });
-            }
-            // element.style.transform = `translateY(${card.position}px)`;
+            computePosition(targetEl, cardEl, {
+              placement: "right-start",
+              strategy: "absolute",
+            }).then(({ x, y }) => {
+              return;
+            });
+            return;
           }
         });
-
-        Array.from(willUpdatePositions.entries()).forEach(([cardEl, { moveY }]) => {
-          cardEl.style.transform = `translateY(${moveY}px)`;
-        });
-
-        return willUpdatePositions;
+        return;
       };
+      // 计算Y轴方向上是否有重叠
+
       batchUpdateCardsPostion(needRenderedCards, targets);
       console.log("cardsWrappers needAlignCards", needAlignCards, targets);
     }
