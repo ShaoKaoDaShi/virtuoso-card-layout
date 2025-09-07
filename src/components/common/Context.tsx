@@ -1,8 +1,7 @@
 import { CardData, VirtualListItem } from "@/types";
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { computePosition, autoUpdate } from "@floating-ui/dom";
-import alignElement from "../domAlign/src/index";
-import getRegion from "../domAlign/src/getRegion";
+
 
 const CardContext = createContext<{
   cards: CardData[];
@@ -83,10 +82,12 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
           // }
 
           if (targetEl && cardEl) {
-            const cardRegion = getRegion(cardEl);
-            const targetRegion = getRegion(targetEl);
+  
             const cardRect = cardEl.getBoundingClientRect();
             const targetRect = targetEl.getBoundingClientRect();
+            computePosition(targetEl, cardEl, {
+              placement: "right-top",
+            });
 
             const nextRegion = {
               start: targetRegion.top,
