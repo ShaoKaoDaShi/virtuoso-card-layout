@@ -104,6 +104,7 @@ export const VirtualListItemComponent: React.FC<VirtualListItemProps> = memo(({
       tabIndex={isClickable ? 0 : undefined}
       aria-label={isClickable ? `列表项 ${index + 1}` : undefined}
       uniq-card-key={item.metadata?.lineNumber ?? 0}
+      repo-id={item.repoId}
     >
       <div style={{ display: "flex", alignItems: "flex-start" }}>
         {showIndex && <ItemIndex>{index + 1}</ItemIndex>}

@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useEffect } from "react";
-import { Virtuoso } from "react-virtuoso";
+import { GroupedVirtuoso, Virtuoso } from "react-virtuoso";
 import styled, { ThemeProvider } from "styled-components";
 import { VirtuosoCardLayoutProps, VirtualListItem, CardData } from "@/types";
 import { useHeightSync } from "@/hooks/useHeightSync";
@@ -11,6 +11,8 @@ import { CardList } from "./CardList";
 import { VirtualListItemComponent } from "./VirtualListItem";
 import { CardProvider, useCardContext } from "./common/Context";
 import { isEqual } from "lodash-es";
+import { useGroupCardContext } from "./common/GroupContext";
+import { GroupCardList } from "./GroupCardList";
 
 const Container = styled.div<{ $cssVariables: Record<string, string> }>`
   display: flex;
@@ -55,7 +57,11 @@ const CardContainer = styled.div<{ $width: string | number }>`
 /**
  * Virtuoso虚拟滚动列表与卡片列表并排布局组件
  */
-export const VirtuosoCardLayout: React.FC<VirtuosoCardLayoutProps> = ({
+type VirtuosoGroupCardLayoutProps = Omit<VirtuosoCardLayoutProps, "items" | "cards"> & {
+  items: VirtualListItem[][];
+  cards: CardData[][];
+};
+export const VirtuosoGroupCardLayout: React.FC<VirtuosoGroupCardLayoutProps> = ({
   items,
   cards,
   layout = {},
@@ -75,7 +81,8 @@ export const VirtuosoCardLayout: React.FC<VirtuosoCardLayoutProps> = ({
   // 合并主题
   const mergedTheme = useMemo(() => mergeTheme(defaultTheme, customTheme), [customTheme]);
   const [customScrollParent, setCustomScrollParent] = React.useState(null);
-  const { cardsWrappers, renderedItems, setRenderedItems, setNeedRenderedCards, needRenderedCards } = useCardContext();
+  const { cardsWrappers, renderedItems, setRenderedItems, setNeedRenderedCards, needRenderedCards } =
+    useGroupCardContext();
 
   // 生成CSS变量
   const cssVariables = useMemo(() => generateCSSVariables(mergedTheme), [mergedTheme]);
@@ -83,6 +90,9 @@ export const VirtuosoCardLayout: React.FC<VirtuosoCardLayoutProps> = ({
   // 响应式布局
   const { getResponsiveLayout, isMobile } = useResponsive();
   const responsiveLayout = getResponsiveLayout();
+
+  const groupData = useMemo(() => items.flat(), [items]);
+  const groupCards = useMemo(() => cards.flat(), [cards]);
 
   // 合并布局配置
   const finalLayout = useMemo(
@@ -110,7 +120,7 @@ export const VirtuosoCardLayout: React.FC<VirtuosoCardLayoutProps> = ({
   } = useHeightSync({ enabled: true });
 
   // 卡片管理
-  const { visibleCards } = useCardManagement(cards);
+  const { visibleCards } = useCardManagement(groupCards);
 
   // 默认项目渲染器
   const defaultItemRenderer = useCallback(
@@ -150,9 +160,15 @@ export const VirtuosoCardLayout: React.FC<VirtuosoCardLayoutProps> = ({
         $cssVariables={cssVariables}
       >
         <VirtuosoContainer $width={finalLayout.virtuosoWidth} $gap={finalLayout.gap} ref={setVirtuosoRef}>
-          <Virtuoso
-            data={items}
-            itemContent={(index, item) => (itemRenderer || defaultItemRenderer)(item, index)}
+          <GroupedVirtuoso
+            data={groupData}
+            groupCounts={items.map((group) => group.length)}
+            groupContent={(index, groupIndex) => (
+              <h1 key={index} style={{ backgroundColor: "#f0f0f0", margin: 0 }}>
+                repo {index}
+              </h1>
+            )}
+            itemContent={(index, groupIndex, item) => (itemRenderer || defaultItemRenderer)(item, index)}
             onScroll={(e) => handleScroll(e.target ? (e.target as HTMLElement).scrollTop : 0)}
             {...virtuosoConfig}
             style={{ height: "100%" }}
@@ -164,24 +180,32 @@ export const VirtuosoCardLayout: React.FC<VirtuosoCardLayoutProps> = ({
             //   // setRenderedItems(vItems);
             // }}
             rangeChanged={(range) => {
-              const vItems = items.slice(range.startIndex, range.endIndex + 1);
+              const vItems = groupData.slice(range.startIndex, range.endIndex + 1);
               const same = isEqual(vItems, renderedItems);
-              console.log("🚀 ~ same:", same, vItems, renderedItems);
+              console.log("🚀 ~ group same:", range, same, vItems, renderedItems);
               if (same) return;
               setRenderedItems(vItems);
-              const renderedItemsLine = vItems.map((item) => item.metadata?.lineNumber);
-              const newNeedRenderedCards = visibleCards.filter((card) => renderedItemsLine.includes(card.lineNumber));
+              const renderedItemsLine = vItems.map((item) => {
+                return {
+                  lineNumber: item.metadata?.lineNumber,
+                  repoId: item.repoId,
+                };
+              });
+
+              const newNeedRenderedCards = visibleCards.filter((card) =>
+                renderedItemsLine.find((item) => item.repoId === card.repoId && item.lineNumber === card.lineNumber)
+              );
 
               const sameCards = isEqual(needRenderedCards, newNeedRenderedCards);
               if (sameCards) return;
-              console.log("🚀 ~ needRenderedCards:", needRenderedCards, newNeedRenderedCards, same, visibleCards);
+              console.log("🚀 ~ needRenderedCards:", needRenderedCards, newNeedRenderedCards, same, vItems);
               setNeedRenderedCards(newNeedRenderedCards);
             }}
           />
         </VirtuosoContainer>
 
         <CardContainer $width={finalLayout.cardListWidth}>
-          <CardList
+          <GroupCardList
             ref={cardListRef}
             cards={needRenderedCards}
             alignmentStrategy={alignmentStrategy}

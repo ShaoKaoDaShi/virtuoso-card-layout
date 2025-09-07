@@ -3,12 +3,13 @@ import { BasicExample } from '../examples/BasicExample';
 import { AdvancedExample } from '../examples/AdvancedExample';
 import './App.css';
 import { CardProvider } from "@/components/common/Context";
+import { GroupCardProvider } from "@/components/common/GroupContext";
 
 /**
  * 演示应用主组件
  */
 export const App: React.FC = () => {
-  const [currentExample, setCurrentExample] = useState<'basic' | 'advanced'>('basic');
+  const [currentExample, setCurrentExample] = useState<"basic" | "advanced">("advanced");
 
   return (
     <div className="demo-app">
@@ -33,9 +34,17 @@ export const App: React.FC = () => {
           </nav>
         </div>
       </header>
-      <CardProvider>
-        <main className="demo-main">{currentExample === "basic" ? <BasicExample /> : <AdvancedExample />}</main>
-      </CardProvider>
+      <main className="demo-main">
+        {currentExample === "basic" ? (
+          <CardProvider>
+            <BasicExample />
+          </CardProvider>
+        ) : (
+          <GroupCardProvider>
+            <AdvancedExample />
+          </GroupCardProvider>
+        )}
+      </main>
       <footer className="demo-footer">
         <div className="demo-footer-content">
           <p>

@@ -5,11 +5,12 @@ import { ReactNode, CSSProperties } from 'react';
  */
 export interface CardData {
   id: string;
-  type: 'comment' | 'issue' | 'suggestion' | 'warning' | 'error';
+  type: "comment" | "issue" | "suggestion" | "warning" | "error";
   content: ReactNode;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
   lineNumber?: number;
   metadata?: Record<string, any>;
+  repoId?: string;
 }
 
 /**
@@ -20,6 +21,7 @@ export interface VirtualListItem {
   content: ReactNode;
   height?: number;
   metadata?: Record<string, any>;
+  repoId?: string;
 }
 
 /**

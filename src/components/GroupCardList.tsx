@@ -1,9 +1,10 @@
-import React, { forwardRef, useMemo, useCallback, useState, useEffect } from 'react';
-import styled from 'styled-components';
-import { CardData, Theme, CardAlignmentStrategy } from '@/types';
-import { calculateOptimalCardPosition, createClassName } from '@/utils/helpers';
-import { Card } from './Card';
+import React, { forwardRef, useMemo, useCallback, useState, useEffect } from "react";
+import styled from "styled-components";
+import { CardData, Theme, CardAlignmentStrategy } from "@/types";
+import { calculateOptimalCardPosition, createClassName } from "@/utils/helpers";
+import { Card } from "./Card";
 import { useCardContext } from "./common/Context";
+import { useGroupCardContext } from "./common/GroupContext";
 
 const Container = styled.div`
   position: relative;
@@ -13,7 +14,6 @@ const Container = styled.div`
   background-color: var(--vc-color-surface);
   padding: var(--vc-spacing-sm);
   border-left: 1px solid var(--vc-color-border);
-
   /* 自定义滚动条样式 */
   &::-webkit-scrollbar {
     width: 6px;
@@ -93,11 +93,11 @@ interface CardListProps {
 /**
  * 卡片列表组件 - 管理和渲染所有卡片
  */
-export const CardList = forwardRef<HTMLDivElement, CardListProps>(
+export const GroupCardList = forwardRef<HTMLDivElement, CardListProps>(
   ({ cards, alignmentStrategy, theme, cardRenderer, onCardClick, isMobile, className }, ref) => {
     const [cardPositions, setCardPositions] = useState<Map<string, { x: number; y: number }>>(new Map());
     const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
-    const { cardsWrappers, needRenderedCards } = useCardContext();
+    const { cardsWrappers, needRenderedCards } = useGroupCardContext();
     // 监听容器尺寸变化
     useEffect(() => {
       if (!ref || typeof ref === "function") return;

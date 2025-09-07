@@ -24,6 +24,7 @@
     "@types/lodash-es": "^4.17.12",
     "lodash": "^4.17.21",
     "lodash-es": "^4.17.21",
+    "nanoid": "^5.1.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-use": "^17.6.0",
