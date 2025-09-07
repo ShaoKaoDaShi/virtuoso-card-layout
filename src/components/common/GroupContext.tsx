@@ -41,7 +41,7 @@ export const GroupCardProvider = ({ children }: { children: ReactNode }) => {
       // 清除 在needRenderedCards之外的卡片
 
       const needAlignCards = needRenderedCards
-        .sort((a, b) => (a.lineNumber ?? 0) - (b.lineNumber ?? 0))
+        .sort((a, b) => Number(a.repoId) - Number(b.repoId) || (a.lineNumber ?? 0) - (b.lineNumber ?? 0))
         .map((card) => cardsWrappers[card.id]);
       // willUpdatePositions.forEach((_, key) => {
       //   if (!needAlignCards.find((card) => card === key)) {
@@ -91,8 +91,8 @@ export const GroupCardProvider = ({ children }: { children: ReactNode }) => {
             const targetRect = targetEl.getBoundingClientRect();
 
             const nextRegion = {
-              start: targetRegion.top,
-              end: targetRegion.top + cardRect.height,
+              start: targetRect.top,
+              end: targetRect.top + cardRect.height,
             };
             let offsetY = 0;
             Array.from(willUpdatePositions.entries()).forEach(([el, { area }]) => {
@@ -105,7 +105,7 @@ export const GroupCardProvider = ({ children }: { children: ReactNode }) => {
                 }
               }
             });
-            offsetY = nextRegion.start - targetRegion.top;
+            offsetY = nextRegion.start - targetRect.top;
             willUpdatePositions.set(cardEl, {
               moveY: offsetY,
               area: {
@@ -120,6 +120,8 @@ export const GroupCardProvider = ({ children }: { children: ReactNode }) => {
               offset: [0, offsetY],
               useCssTransform: true,
             });
+            // const moveY = nextRegion.start - cardRect.top;
+            // cardEl.style.transform = `translateY(${moveY}px)`;
           }
         });
         return;
