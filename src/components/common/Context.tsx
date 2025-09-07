@@ -97,12 +97,13 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
               if (area) {
                 if (nextRegion.start < area.end && nextRegion.end > area.start) {
                   // 卡片顶部在目标底部下面，需要调整卡片位置
-                  offsetY += area.end - nextRegion.start + 10;
-                  nextRegion.start = area.end;
+
+                  nextRegion.start = area.end + 10;
                   nextRegion.end = area.end + cardRect.height + 10;
                 }
               }
             });
+            offsetY = nextRegion.start - targetRegion.top;
             willUpdatePositions.set(cardEl, {
               moveY: offsetY,
               area: {
