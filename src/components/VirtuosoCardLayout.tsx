@@ -132,8 +132,8 @@ export const VirtuosoCardLayout: React.FC<VirtuosoCardLayoutProps> = ({
 
   // Virtuoso配置
   const virtuosoConfig = {
-    overscan: 200,
-    increaseViewportBy: 200,
+    overscan: 3600,
+    increaseViewportBy: 1800,
     ...virtuosoProps,
   };
 

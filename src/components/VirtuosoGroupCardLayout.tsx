@@ -91,7 +91,13 @@ export const VirtuosoGroupCardLayout: React.FC<VirtuosoGroupCardLayoutProps> = (
   const { getResponsiveLayout, isMobile } = useResponsive();
   const responsiveLayout = getResponsiveLayout();
 
-  const groupData = useMemo(() => items.flat(), [items]);
+  const groupData = useMemo(() => {
+    // 分组的时候 标题会占用一个item, 所以需要在每个group的开头添加一个title item
+    const groupItems = items
+      .map((item, index) => [{ repoId: `${index}`, type: "title", title: `repo ${index}` }, ...item])
+      .flat();
+    return groupItems;
+  }, [items]);
   const groupCards = useMemo(() => cards.flat(), [cards]);
 
   // 合并布局配置
@@ -124,9 +130,9 @@ export const VirtuosoGroupCardLayout: React.FC<VirtuosoGroupCardLayoutProps> = (
 
   // 默认项目渲染器
   const defaultItemRenderer = useCallback(
-    (item: VirtualListItem, index: number) => (
-      <VirtualListItemComponent item={item} index={index} onClick={onItemClick} theme={mergedTheme} />
-    ),
+    (item: VirtualListItem, index: number) => {
+      return <VirtualListItemComponent item={item} index={index} onClick={onItemClick} theme={mergedTheme} />;
+    },
     [onItemClick, mergedTheme]
   );
 
@@ -142,8 +148,8 @@ export const VirtuosoGroupCardLayout: React.FC<VirtuosoGroupCardLayoutProps> = (
 
   // Virtuoso配置
   const virtuosoConfig = {
-    overscan: 200,
-    increaseViewportBy: 200,
+    overscan: 3600,
+    increaseViewportBy: 1800,
     ...virtuosoProps,
   };
 
@@ -163,7 +169,7 @@ export const VirtuosoGroupCardLayout: React.FC<VirtuosoGroupCardLayoutProps> = (
           <GroupedVirtuoso
             data={groupData}
             groupCounts={items.map((group) => group.length)}
-            groupContent={(index, groupIndex) => (
+            groupContent={(index) => (
               <h1 key={index} style={{ backgroundColor: "#f0f0f0", margin: 0 }}>
                 repo {index}
               </h1>
