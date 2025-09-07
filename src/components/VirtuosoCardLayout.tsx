@@ -158,7 +158,7 @@ export const VirtuosoCardLayout: React.FC<VirtuosoCardLayoutProps> = ({
             {...virtuosoConfig}
             style={{ height: "100%" }}
             customScrollParent={customScrollParent}
-            increaseViewportBy={400}
+            increaseViewportBy={1800}
             // itemsRendered={(items) => {
             //   const vItems = items.map((item) => item.data!);
             //   console.log("🚀 ~ vItems:", vItems);

@@ -57,14 +57,12 @@ export const useCardManagement = (
     return cards
       .sort((a, b) => {
         // 首先按优先级排序
-        const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
-        if (priorityDiff !== 0) return priorityDiff;
-        
+
         // 如果优先级相同，按行号排序
         if (a.lineNumber && b.lineNumber) {
           return a.lineNumber - b.lineNumber;
         }
-        
+
         // 最后按ID排序确保稳定性
         return a.id.localeCompare(b.id);
       });

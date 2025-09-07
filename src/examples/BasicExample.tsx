@@ -31,31 +31,31 @@ export const BasicExample: React.FC = () => {
 
   // 生成示例卡片数据
   const generateCards = (count: number): CardData[] => {
-    const cardTypes: CardData['type'][] = ['comment', 'issue', 'suggestion', 'warning', 'error'];
-    const priorities: CardData['priority'][] = ['high', 'medium', 'low'];
-    
+    const cardTypes: CardData["type"][] = ["comment", "issue", "suggestion", "warning", "error"];
+    const priorities: CardData["priority"][] = ["high", "medium", "low"];
+
     return Array.from({ length: count }, (_, index) => ({
-      id: generateId('card'),
+      id: generateId("card"),
       type: cardTypes[index % cardTypes.length],
       priority: priorities[index % priorities.length],
       content: `
         <div>
           <p><strong>卡片 ${index + 1}</strong></p>
           <p>这是一个示例卡片，展示了不同类型的内容。</p>
-          <p>行号: ${Math.floor(Math.random() * 100) + 1}</p>
+          <p>行号: ${Math.floor(Math.random() * 600) + 1}</p>
         </div>
       `,
-      lineNumber: Math.floor(Math.random() * 100) + 1,
+      lineNumber: Math.floor(Math.random() * 600) + 1,
       metadata: {
-        author: '开发者',
+        author: "开发者",
         timestamp: Date.now() - Math.random() * 86400000,
-        tags: ['示例', '测试']
-      }
+        tags: ["示例", "测试"],
+      },
     }));
   };
 
-  const [items] = useState(() => generateListItems(1000));
-  const [cards, setCards] = useState(() => generateCards(15));
+  const [items] = useState(() => generateListItems(100000));
+  const [cards, setCards] = useState(() => generateCards(200));
 
   // 处理项目点击
   const handleItemClick = useCallback((item: VirtualListItem, index: number) => {

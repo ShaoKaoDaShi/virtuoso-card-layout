@@ -200,7 +200,7 @@ export const CardList = forwardRef<HTMLDivElement, CardListProps>(
             $isMobile={isMobile}
             ref={(el) => {
               if (el) {
-                cardsWrappers[card?.lineNumber ?? 0] = el;
+                cardsWrappers[card.id] = el;
               }
             }}
           >
