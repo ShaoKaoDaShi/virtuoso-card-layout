@@ -42,10 +42,10 @@ export const BasicExample: React.FC = () => {
         <div>
           <p><strong>卡片 ${index + 1}</strong></p>
           <p>这是一个示例卡片，展示了不同类型的内容。</p>
-          <p>行号: ${Math.floor(Math.random() * 600) + 1}</p>
+          <p>行号: ${Math.floor(Math.random() * 60000) + 1}</p>
         </div>
       `,
-      lineNumber: Math.floor(Math.random() * 600) + 1,
+      lineNumber: Math.floor(Math.random() * 60000) + 1,
       metadata: {
         author: "开发者",
         timestamp: Date.now() - Math.random() * 86400000,
@@ -54,8 +54,8 @@ export const BasicExample: React.FC = () => {
     }));
   };
 
-  const [items] = useState(() => generateListItems(100000));
-  const [cards, setCards] = useState(() => generateCards(200));
+  const [items] = useState(() => generateListItems(200000));
+  const [cards, setCards] = useState(() => generateCards(40000));
 
   // 处理项目点击
   const handleItemClick = useCallback((item: VirtualListItem, index: number) => {
@@ -71,20 +71,20 @@ export const BasicExample: React.FC = () => {
 
   // 处理滚动
   const handleScroll = useCallback((scrollTop: number) => {
-    console.log('滚动位置:', scrollTop);
+    console.log("滚动位置:", scrollTop);
   }, []);
 
   // 处理高度变化
   const handleHeightChange = useCallback((height: number) => {
-    console.log('容器高度变化:', height);
+    console.log("容器高度变化:", height);
   }, []);
 
   // 添加新卡片
   const addNewCard = useCallback(() => {
     const newCard: CardData = {
-      id: generateId('card'),
-      type: 'comment',
-      priority: 'medium',
+      id: generateId("card"),
+      type: "comment",
+      priority: "medium",
       content: `
         <div>
           <p><strong>新卡片</strong></p>
@@ -93,12 +93,12 @@ export const BasicExample: React.FC = () => {
       `,
       lineNumber: Math.floor(Math.random() * 100) + 1,
       metadata: {
-        author: '用户',
-        timestamp: Date.now()
-      }
+        author: "用户",
+        timestamp: Date.now(),
+      },
     };
-    
-    setCards(prev => [...prev, newCard]);
+
+    setCards((prev) => [...prev, newCard]);
   }, []);
 
   // 清空卡片
@@ -107,48 +107,46 @@ export const BasicExample: React.FC = () => {
   }, []);
 
   return (
-    <div style={{ padding: '20px', height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ marginBottom: '20px' }}>
-        <h1 style={{ margin: '0 0 10px 0', fontSize: '24px', fontWeight: 'bold' }}>
-          Virtuoso卡片布局 - 基础示例
-        </h1>
-        <p style={{ margin: '0 0 15px 0', color: '#666' }}>
-          展示虚拟滚动列表与卡片列表的并排布局和高度同步功能
-        </p>
-        
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <button 
+    <div style={{ padding: "20px", height: "100vh", display: "flex", flexDirection: "column" }}>
+      <div style={{ marginBottom: "20px" }}>
+        <h1 style={{ margin: "0 0 10px 0", fontSize: "24px", fontWeight: "bold" }}>Virtuoso卡片布局 - 基础示例</h1>
+        <p style={{ margin: "0 0 15px 0", color: "#666" }}>展示虚拟滚动列表与卡片列表的并排布局和高度同步功能</p>
+
+        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <button
             onClick={addNewCard}
             style={{
-              padding: '8px 16px',
-              backgroundColor: '#1890ff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
+              padding: "8px 16px",
+              backgroundColor: "#1890ff",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
             }}
           >
             添加卡片
           </button>
-          <button 
+          <button
             onClick={clearCards}
             style={{
-              padding: '8px 16px',
-              backgroundColor: '#f5222d',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
+              padding: "8px 16px",
+              backgroundColor: "#f5222d",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
             }}
           >
             清空卡片
           </button>
-          <span style={{ 
-            padding: '8px 12px', 
-            backgroundColor: '#f0f0f0', 
-            borderRadius: '4px',
-            fontSize: '14px'
-          }}>
+          <span
+            style={{
+              padding: "8px 12px",
+              backgroundColor: "#f0f0f0",
+              borderRadius: "4px",
+              fontSize: "14px",
+            }}
+          >
             列表项: {items.length} | 卡片: {cards.length}
           </span>
         </div>
@@ -159,16 +157,16 @@ export const BasicExample: React.FC = () => {
           items={items}
           cards={cards}
           layout={{
-            virtuosoWidth: '70%',
-            cardListWidth: '30%',
-            gap: '1px',
-            minHeight: '400px',
-            maxHeight: '100%'
+            virtuosoWidth: "70%",
+            cardListWidth: "30%",
+            gap: "1px",
+            minHeight: "400px",
+            maxHeight: "100%",
           }}
           heightSync={{
             enabled: true,
             debounceMs: 100,
-            minHeight: 400
+            minHeight: 400,
           }}
           alignmentStrategy="hybrid"
           onItemClick={handleItemClick}
@@ -176,8 +174,8 @@ export const BasicExample: React.FC = () => {
           onScroll={handleScroll}
           onHeightChange={handleHeightChange}
           virtuosoProps={{
-            overscan: 200,
-            increaseViewportBy: 100
+            overscan: 3600,
+            increaseViewportBy: 1800,
           }}
         />
       </div>
