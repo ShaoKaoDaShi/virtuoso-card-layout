@@ -28,7 +28,8 @@
     "react-dom": "^18.2.0",
     "react-use": "^17.6.0",
     "react-virtuoso": "^4.6.2",
-    "styled-components": "^6.1.1"
+    "styled-components": "^6.1.1",
+    "unstated-next": "^1.1.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",
