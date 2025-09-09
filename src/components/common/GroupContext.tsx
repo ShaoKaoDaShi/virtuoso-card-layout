@@ -49,14 +49,14 @@ export const GroupCardProvider = ({ children }: { children: ReactNode }) => {
         return lines;
       };
       const targets = getTargetLines(needRenderedCards);
-      const batchUpdateCardsPostion = (cards: CardData[], targets: Map<string, HTMLDivElement>) => {
+      const batchUpdateCardsPostion = async (cards: CardData[], targets: Map<string, HTMLDivElement>) => {
         // 对齐的过程中记录所有卡片调整之后的位置，新卡片调整位置的时候需要计算出不跟其他卡片重叠的位置
         const willUpdatePositions = new Map<
           HTMLDivElement,
           { moveY: number; area: { start: number; end: number }; targetRect: DOMRect }
         >();
-        cards.forEach((card) => {
-          if (card.lineNumber === undefined) return;
+        for (const card of cards) {
+          if (card.lineNumber === undefined) continue;
 
           const targetEl = targets.get(card.id);
           const cardEl = cardsWrappers[card.id];
@@ -64,37 +64,34 @@ export const GroupCardProvider = ({ children }: { children: ReactNode }) => {
           if (targetEl && cardEl) {
             const cardRect = cardEl.getBoundingClientRect();
             const targetRect = targetEl.getBoundingClientRect();
-            computePosition(targetEl, cardEl, {
+            const { y } = await computePosition(targetEl, cardEl, {
               placement: "right-start",
-            }).then(({ x, y }) => {
-              console.log("x, y", x, y);
-              const nextRegion = {
-                start: y,
-                end: y + cardRect.height,
-              };
-              Array.from(willUpdatePositions.entries()).forEach(([el, { area }]) => {
-                if (area) {
-                  if (nextRegion.start < area.end && nextRegion.end > area.start) {
-                    // 卡片顶部在目标底部下面，需要调整卡片位置
+            });
+            const nextRegion = {
+              start: y,
+              end: y + cardRect.height,
+            };
+            for (const [, { area }] of willUpdatePositions.entries()) {
+              if (area) {
+                if (nextRegion.start < area.end && nextRegion.end > area.start) {
+                  // 卡片顶部在目标底部下面，需要调整卡片位置
 
-                    nextRegion.start = area.end + 10;
-                    nextRegion.end = area.end + cardRect.height + 10;
-                  }
+                  nextRegion.start = area.end + 10;
+                  nextRegion.end = area.end + cardRect.height + 10;
                 }
-              });
-              Object.assign(cardEl.style, {
-                position: "absolute",
-                top: `${nextRegion.start}px`,
-              });
-              willUpdatePositions.set(cardEl, {
-                moveY: nextRegion.start - targetRect.top,
-                area: nextRegion,
-                targetRect,
-              });
+              }
+            }
+            Object.assign(cardEl.style, {
+              position: "absolute",
+              top: `${nextRegion.start}px`,
+            });
+            willUpdatePositions.set(cardEl, {
+              moveY: nextRegion.start - targetRect.top,
+              area: nextRegion,
+              targetRect,
             });
           }
-        });
-        return;
+        }
       };
       // 计算Y轴方向上是否有重叠
 

@@ -1,5 +1,11 @@
 import { CardData, VirtualListItem } from "@/types";
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+} from "react";
 import { computePosition, autoUpdate } from "@floating-ui/dom";
 import alignElement from "../domAlign/src/index";
 import getRegion from "../domAlign/src/getRegion";
@@ -27,7 +33,9 @@ const CardContext = createContext<{
 // 在Provider中提供setCards方法
 export const CardProvider = ({ children }: { children: ReactNode }) => {
   const [cards, setCards] = useState<CardData[]>([]);
-  const [cardsWrappers, setCardsWrappers] = useState<Record<string, HTMLDivElement>>({});
+  const [cardsWrappers, setCardsWrappers] = useState<
+    Record<string, HTMLDivElement>
+  >({});
   const [renderedItems, setRenderedItems] = useState<VirtualListItem[]>([]);
   const [needRenderedCards, setNeedRenderedCards] = useState<CardData[]>([]);
   // const [willUpdatePositions, setWillUpdatePositions] = useState<
@@ -51,7 +59,9 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
         const lines = new Map<string, HTMLDivElement>();
         cards.forEach((card) => {
           if (card.lineNumber === undefined) return;
-          const element = document.querySelector(`[uniq-card-key="${card.lineNumber}"]`);
+          const element = document.querySelector(
+            `[uniq-card-key="${card.lineNumber}"]`
+          );
           if (element) {
             lines.set(card.id, element);
           }
@@ -60,67 +70,59 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
         return lines;
       };
       const targets = getTargetLines(needRenderedCards);
-      const batchUpdateCardsPostion = (cards: CardData[], targets: Map<string, HTMLDivElement>) => {
+      const batchUpdateCardsPostion = async (
+        cards: CardData[],
+        targets: Map<string, HTMLDivElement>
+      ) => {
         // 对齐的过程中记录所有卡片调整之后的位置，新卡片调整位置的时候需要计算出不跟其他卡片重叠的位置
         const willUpdatePositions = new Map<
           HTMLDivElement,
-          { moveY: number; area: { start: number; end: number }; targetRect: DOMRect }
+          {
+            moveY: number;
+            area: { start: number; end: number };
+            targetRect: DOMRect;
+          }
         >();
-        cards.forEach((card) => {
-          if (card.lineNumber === undefined) return;
+        for (const card of cards) {
+          if (card.lineNumber === undefined) continue;
 
           const targetEl = targets.get(card.id);
           const cardEl = cardsWrappers[card.id];
-          // 已计算过的卡片，直接使用计算结果
-          // if (willUpdatePositions.has(cardEl)) {
-          //   const { moveY } = willUpdatePositions.get(cardEl) ?? {};
-          //   alignElement(cardEl, targetEl, {
-          //     points: ["tl", "tl"],
-          //     offset: [0, moveY],
-          //     useCssTransform: true,
-          //   });
-          //   return;
-          // }
 
           if (targetEl && cardEl) {
-            const cardRegion = getRegion(cardEl);
-            const targetRegion = getRegion(targetEl);
             const cardRect = cardEl.getBoundingClientRect();
             const targetRect = targetEl.getBoundingClientRect();
-
+            const { y } = await computePosition(targetEl, cardEl, {
+              placement: "right-start",
+            });
             const nextRegion = {
-              start: targetRegion.top,
-              end: targetRegion.top + cardRect.height,
+              start: y,
+              end: y + cardRect.height,
             };
-            let offsetY = 0;
-            Array.from(willUpdatePositions.entries()).forEach(([el, { area }]) => {
+            for (const [, { area }] of willUpdatePositions.entries()) {
               if (area) {
-                if (nextRegion.start < area.end && nextRegion.end > area.start) {
+                if (
+                  nextRegion.start < area.end &&
+                  nextRegion.end > area.start
+                ) {
                   // 卡片顶部在目标底部下面，需要调整卡片位置
 
                   nextRegion.start = area.end + 10;
                   nextRegion.end = area.end + cardRect.height + 10;
                 }
               }
+            }
+            Object.assign(cardEl.style, {
+              position: "absolute",
+              top: `${nextRegion.start}px`,
             });
-            offsetY = nextRegion.start - targetRegion.top;
             willUpdatePositions.set(cardEl, {
-              moveY: offsetY,
-              area: {
-                start: nextRegion.start,
-                end: nextRegion.end,
-              },
+              moveY: nextRegion.start - targetRect.top,
+              area: nextRegion,
               targetRect,
             });
-            console.log("Array.from(willUpdatePositions.entries()", Array.from(willUpdatePositions.entries()));
-            alignElement(cardEl, targetEl, {
-              points: ["tl", "tl"],
-              offset: [0, offsetY],
-              useCssTransform: true,
-            });
           }
-        });
-        return;
+        }
       };
       // 计算Y轴方向上是否有重叠
 
