@@ -75,7 +75,8 @@ export const VirtuosoCardLayout: React.FC<VirtuosoCardLayoutProps> = ({
   // 合并主题
   const mergedTheme = useMemo(() => mergeTheme(defaultTheme, customTheme), [customTheme]);
   const [customScrollParent, setCustomScrollParent] = React.useState(null);
-  const { cardsWrappers, renderedItems, setRenderedItems, setNeedRenderedCards, needRenderedCards } = useCardContext();
+  const { cardsWrappers, renderedItems, setRenderedItems, setNeedRenderedCards, needRenderedCards, chainMoveCards } =
+    useCardContext();
 
   // 生成CSS变量
   const cssVariables = useMemo(() => generateCSSVariables(mergedTheme), [mergedTheme]);
@@ -187,7 +188,9 @@ export const VirtuosoCardLayout: React.FC<VirtuosoCardLayoutProps> = ({
             alignmentStrategy={alignmentStrategy}
             theme={mergedTheme}
             cardRenderer={cardRenderer}
-            onCardClick={onCardClick}
+            onCardClick={(card) => {
+              chainMoveCards(card);
+            }}
             isMobile={isMobile}
           />
         </CardContainer>

@@ -1,14 +1,14 @@
-import React, { useState, useCallback } from 'react';
-import { VirtuosoCardLayout } from '../components/VirtuosoCardLayout';
-import { CardData, VirtualListItem } from '../types';
-import { generateId } from '../utils/helpers';
+import React, { useState, useCallback } from "react";
+import { VirtuosoCardLayout } from "../components/VirtuosoCardLayout";
+import { CardData, VirtualListItem } from "../types";
+import { generateId } from "../utils/helpers";
 import { generateCards, generateListItems } from "./common/mockData";
 
 /**
  * 基础使用示例 - 展示Virtuoso虚拟滚动与卡片列表的基本功能
  */
 export const BasicExample: React.FC = () => {
-  const [items] = useState(() => generateListItems(200000));
+  const [items] = useState(() => generateListItems(100000));
   const [cards, setCards] = useState(() => generateCards(40000));
 
   // 处理项目点击
