@@ -1,7 +1,7 @@
 import { CardData, VirtualListItem } from "@/types";
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 // import { computePosition, autoUpdate, platform } from "@floating-ui/dom";
-import { computePosition, getBoundingClientRect } from "./getBoundingClientRect.standalone";
+import { computePosition, getBoundingClientRect } from "./getBoundingClientRect";
 
 import alignElement from "../domAlign/src/index";
 import getRegion from "../domAlign/src/getRegion";
