@@ -1,9 +1,12 @@
 import { CardData, VirtualListItem } from "@/types";
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { computePosition, autoUpdate } from "@floating-ui/dom";
+// import { computePosition, autoUpdate, platform } from "@floating-ui/dom";
+import { computePosition, getBoundingClientRect } from "./getBoundingClientRect.standalone";
+
 import alignElement from "../domAlign/src/index";
 import getRegion from "../domAlign/src/getRegion";
 import { transform } from "lodash-es";
+
 const getTargetLines = (cards: CardData[]) => {
   const lines = new Map<string, HTMLDivElement>();
   cards.forEach((card) => {
@@ -80,14 +83,10 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
           const cardEl = cardsWrappers[card.id];
 
           if (targetEl && cardEl) {
-            const cardRect = cardEl.getBoundingClientRect();
-            const targetRect = targetEl.getBoundingClientRect();
-            const { y } = await computePosition(targetEl, cardEl, {
-              placement: "right-start",
-            });
+            const { offsetY, targetRect, cardRect } = computePosition(targetEl, cardEl);
             const nextRegion = {
-              start: y,
-              end: y + cardRect.height,
+              start: targetRect.y,
+              end: targetRect.y + cardRect.height,
             };
             for (const [, { area }] of willUpdatePositions.entries()) {
               if (area) {
@@ -99,15 +98,17 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
                 }
               }
             }
+            // debugger;
+            const ry = Number(cardEl.getAttribute("ry") || 0);
             Object.assign(cardEl.style, {
               position: "relative",
-              transform: `translateY(${nextRegion.start - cardEl.offsetTop}px)`,
+              transform: `translateY(${nextRegion.start - cardRect.top + ry}px)`,
             });
             // 给cardEl添加自定义属性，记录调整后的位置
-            cardEl.setAttribute("relativeY", `${nextRegion.start - cardEl.offsetTop}`);
+            cardEl.setAttribute("ry", `${nextRegion.start - cardRect.top + ry}`);
 
             willUpdatePositions.set(cardEl, {
-              moveY: nextRegion.start - targetRect.top,
+              moveY: nextRegion.start - cardRect.top + ry,
               area: nextRegion,
               targetRect,
             });
@@ -123,23 +124,28 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
 
   const chainMoveCards = async (card: CardData) => {
     const cardEl = cardsWrappers[card.id];
+    const cardRect = cardEl.getBoundingClientRect();
+    const cardRect2 = getBoundingClientRect(cardEl);
+    console.log("cardRect", cardRect, cardRect2);
+
     const cardsWrappersArr = Object.keys(cardsWrappers).map((key) => ({ id: key, el: cardsWrappers[key] }));
     cardsWrappersArr.sort((a, b) => a.el.offsetTop - b.el.offsetTop);
     const targets = getTargetLines(needRenderedCards);
     const targetEl = targets.get(card.id);
+    targetEl.style.backgroundColor = "red";
+    setTimeout(() => {
+      targetEl.style.backgroundColor = "";
+    }, 2000);
     const cardIndex = cardsWrappersArr.findIndex((item) => Number(item.id) === Number(card.id));
     const topAreaCards = cardsWrappersArr.slice(0, cardIndex);
     const bottomAreaCards = cardsWrappersArr.slice(cardIndex + 1);
-
+    return;
     const shouldUpdatePositionsCards = [];
     if (targetEl && cardEl) {
       const { y } = await computePosition(targetEl, cardEl, {
         placement: "right-start",
       });
-      targetEl.style.backgroundColor = "red";
-      setTimeout(() => {
-        targetEl.style.backgroundColor = "";
-      }, 2000);
+
       const relativeY = y - cardEl.offsetTop;
 
       const movedArea = {

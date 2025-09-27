@@ -38,10 +38,10 @@ export const generateCards = (count: number, repoId?: string): CardData[] => {
         <div>
           <p><strong>卡片 ${index + 1}</strong></p>
           <p>这是一个示例卡片，展示了不同类型的内容。</p>
-          <p>行号: ${Math.floor(Math.random() * 60000) + 1}</p>
+          <p>行号: ${Math.floor(Math.random() * 100000) + 1}</p>
         </div>
       `,
-    lineNumber: Math.floor(Math.random() * 60000) + 1,
+    lineNumber: Math.floor(Math.random() * 100000) + 1,
     metadata: {
       author: "开发者",
       timestamp: Date.now() - Math.random() * 86400000,
