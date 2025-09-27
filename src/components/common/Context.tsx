@@ -121,70 +121,81 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
       console.log("cardsWrappers needAlignCards", needAlignCards, targets);
     }
   }, [needRenderedCards]);
+  const hilightTarget = <T extends HTMLElement>(targetEl?: T) => {
+    if (!targetEl) return;
+    targetEl.style.backgroundColor = "red";
+    const clearHilight = setTimeout(() => {
+      targetEl.style.backgroundColor = "";
+      clearTimeout(clearHilight);
+    }, 2000);
+  };
 
+  const getRy = (el: HTMLElement) => Number(el.getAttribute("ry") || 0);
   const chainMoveCards = async (card: CardData) => {
     const cardEl = cardsWrappers[card.id];
-    const cardRect = cardEl.getBoundingClientRect();
-    const cardRect2 = getBoundingClientRect(cardEl);
-    console.log("cardRect", cardRect, cardRect2);
 
     const cardsWrappersArr = Object.keys(cardsWrappers).map((key) => ({ id: key, el: cardsWrappers[key] }));
-    cardsWrappersArr.sort((a, b) => a.el.offsetTop - b.el.offsetTop);
+    cardsWrappersArr.sort((a, b) => {
+      const aRect = getBoundingClientRect(a.el);
+      const bRect = getBoundingClientRect(b.el);
+      return aRect.top - bRect.top;
+    });
     const targets = getTargetLines(needRenderedCards);
     const targetEl = targets.get(card.id);
-    targetEl.style.backgroundColor = "red";
-    setTimeout(() => {
-      targetEl.style.backgroundColor = "";
-    }, 2000);
+    hilightTarget(targetEl);
     const cardIndex = cardsWrappersArr.findIndex((item) => Number(item.id) === Number(card.id));
     const topAreaCards = cardsWrappersArr.slice(0, cardIndex);
-    const bottomAreaCards = cardsWrappersArr.slice(cardIndex + 1);
-    return;
+
     const shouldUpdatePositionsCards = [];
     if (targetEl && cardEl) {
-      const { y } = await computePosition(targetEl, cardEl, {
-        placement: "right-start",
-      });
+      const cardRect = getBoundingClientRect(cardEl);
+      const ry = getRy(cardEl);
+      const { offsetY } = computePosition(targetEl, cardEl);
 
-      const relativeY = y - cardEl.offsetTop;
-
+      const relativeY = offsetY + ry;
+      console.log("🚀 ~ chainMoveCards ~ relativeY:", relativeY, offsetY, ry, Math.floor(offsetY));
       const movedArea = {
-        start: cardEl.offsetTop,
-        end: cardEl.offsetTop + cardEl.offsetHeight,
+        top: cardRect.top,
+        bottom: cardRect.bottom,
       };
-      if (relativeY === 0) return;
+
+      if (Math.floor(Number(offsetY.toFixed(1))) === 0) return;
       shouldUpdatePositionsCards.push({
         el: cardEl,
         relativeY,
       });
 
-      if (relativeY > 0) {
+      for (let card of shouldUpdatePositionsCards) {
+        const resY = card.relativeY;
+        card.el.setAttribute("ry", `${resY}`);
+        Object.assign(card.el.style, {
+          position: "relative",
+          transform: `translateY(${resY}px)`,
+          transition: "transform 0.1s ease-in-out",
+        });
+      }
+      return;
+      if (offsetY > 0) {
         // 向下移动
         // shouldUpdatePositionsCards.push(...bottomAreaCards);
       } else {
-        movedArea.start = y;
+        movedArea.top = movedArea.top + offsetY;
         for (let i = topAreaCards.length - 1; i >= 0; i--) {
           const topCard = topAreaCards[i];
-          const topCardBottom = topCard.el.offsetTop + topCard.el.offsetHeight;
-          const topCardTop = topCard.el.offsetTop;
-          if (movedArea.start < topCardBottom && movedArea.end > topCardTop) {
-            const relativeY = movedArea.start - (topCardBottom + 10);
+          const topCardRect = getBoundingClientRect(topCard.el);
+          const topCardBottom = topCardRect.bottom;
+          const topCardTop = topCardRect.top;
+          if (movedArea.top < topCardBottom && movedArea.bottom > topCardTop) {
+            const topCardRy = getRy(topCard.el);
+            const offsetY = movedArea.top - (topCardBottom + 10);
+            const relativeY = offsetY + topCardRy;
             shouldUpdatePositionsCards.push({
               el: topCard.el,
               relativeY,
             });
-            movedArea.start = topCardTop + relativeY;
+            movedArea.top = movedArea.top - (topCardRect.height + 10);
           }
         }
-      }
-
-      for (let card of shouldUpdatePositionsCards) {
-        const resY = Number(card.el.getAttribute("relativeY")) + card.relativeY;
-        card.el.setAttribute("relativeY", `${resY}`);
-        Object.assign(card.el.style, {
-          position: "relative",
-          transform: `translateY(${resY}px)`,
-        });
       }
     }
   };

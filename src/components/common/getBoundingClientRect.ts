@@ -209,7 +209,7 @@ export function clearRelativePosition(element: Element) {
 
 export function computePosition(targetEl: Element, cardEl: Element) {
   const targetRect = getBoundingClientRect(targetEl);
-  clearRelativePosition(cardEl);
+  // clearRelativePosition(cardEl);
   const cardRect = getBoundingClientRect(cardEl);
   const offsetX = targetRect.x - cardRect.x;
   const offsetY = targetRect.y - cardRect.y;
