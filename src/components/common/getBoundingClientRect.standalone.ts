@@ -194,23 +194,24 @@ export function getBoundingClientRect(
   return rectToClientRect({ width, height, x, y });
 }
 
-export function computePosition(targetEl: Element, cardEl: Element) {
-  const targetRect = getBoundingClientRect(targetEl);
-  const cardRect = getBoundingClientRect(cardEl);
-
-  if (cardEl instanceof HTMLElement) {
-    const cardElStyle = getComputedStyle(cardEl);
+export function clearRelativePosition(element: Element) {
+  if (element instanceof HTMLElement) {
+    const cardElStyle = getComputedStyle(element);
     const { transform, position, top } = cardElStyle;
     if (transform !== "none" || Boolean(top)) {
-      Object.assign(cardEl.style, {
+      Object.assign(element.style, {
         transform: "none",
         top: "",
       });
     }
   }
+}
 
+export function computePosition(targetEl: Element, cardEl: Element) {
+  const targetRect = getBoundingClientRect(targetEl);
+  clearRelativePosition(cardEl);
+  const cardRect = getBoundingClientRect(cardEl);
   const offsetX = targetRect.x - cardRect.x;
   const offsetY = targetRect.y - cardRect.y;
-
   return { offsetX, offsetY, targetRect, cardRect };
 }
