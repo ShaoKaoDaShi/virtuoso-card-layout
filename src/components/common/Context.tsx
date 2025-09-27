@@ -116,7 +116,7 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
         }
       };
       // 计算Y轴方向上是否有重叠
-
+      //TODO： focuscard之后再次滚动位置混乱
       batchUpdateCardsPostion(needRenderedCards, targets);
       console.log("cardsWrappers needAlignCards", needAlignCards, targets);
     }
@@ -164,7 +164,7 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
         el: cardEl,
         relativeY,
       });
-
+      //TODO：在这里更新位置是正确的， 但是涉及到向上向下移动之后，向上的卡片移动的位置刚好超出魔表位置一个卡片的高度
       for (let card of shouldUpdatePositionsCards) {
         const resY = card.relativeY;
         card.el.setAttribute("ry", `${resY}`);
