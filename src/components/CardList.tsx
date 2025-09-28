@@ -1,14 +1,21 @@
-import React, { forwardRef, useMemo, useCallback, useState, useEffect } from 'react';
-import styled from 'styled-components';
-import { CardData, Theme, CardAlignmentStrategy } from '@/types';
-import { calculateOptimalCardPosition, createClassName } from '@/utils/helpers';
-import { Card } from './Card';
+import React, {
+  forwardRef,
+  useMemo,
+  useCallback,
+  useState,
+  useEffect,
+} from "react";
+import styled from "styled-components";
+import { CardData, Theme, CardAlignmentStrategy } from "@/types";
+import { calculateOptimalCardPosition, createClassName } from "@/utils/helpers";
+import { Card } from "./Card";
 import { useCardContext } from "./common/Context";
 
 const Container = styled.div`
   position: relative;
   width: 100%;
   height: 100%;
+  overflow: hidden;
 
   background-color: var(--vc-color-surface);
   padding: var(--vc-spacing-sm);
@@ -94,9 +101,25 @@ interface CardListProps {
  * 卡片列表组件 - 管理和渲染所有卡片
  */
 export const CardList = forwardRef<HTMLDivElement, CardListProps>(
-  ({ cards, alignmentStrategy, theme, cardRenderer, onCardClick, isMobile, className }, ref) => {
-    const [cardPositions, setCardPositions] = useState<Map<string, { x: number; y: number }>>(new Map());
-    const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
+  (
+    {
+      cards,
+      alignmentStrategy,
+      theme,
+      cardRenderer,
+      onCardClick,
+      isMobile,
+      className,
+    },
+    ref
+  ) => {
+    const [cardPositions, setCardPositions] = useState<
+      Map<string, { x: number; y: number }>
+    >(new Map());
+    const [containerDimensions, setContainerDimensions] = useState({
+      width: 0,
+      height: 0,
+    });
     const { cardsWrappers, needRenderedCards } = useCardContext();
     // 监听容器尺寸变化
     useEffect(() => {
@@ -171,7 +194,13 @@ export const CardList = forwardRef<HTMLDivElement, CardListProps>(
     // 默认卡片渲染器
     const defaultCardRenderer = useCallback(
       (card: CardData) => (
-        <Card key={card.id} card={card} theme={theme} onClick={() => onCardClick?.(card)} isMobile={isMobile} />
+        <Card
+          key={card.id}
+          card={card}
+          theme={theme}
+          onClick={() => onCardClick?.(card)}
+          isMobile={isMobile}
+        />
       ),
       [theme, onCardClick, isMobile]
     );
@@ -181,18 +210,34 @@ export const CardList = forwardRef<HTMLDivElement, CardListProps>(
     // 空状态
     if (cards.length === 0) {
       return (
-        <Container ref={ref} className={createClassName("card-list", "card-list--empty", className)}>
+        <Container
+          ref={ref}
+          className={createClassName(
+            "card-list",
+            "card-list--empty",
+            className
+          )}
+        >
           <EmptyState>
             <EmptyIcon />
             <div>暂无卡片</div>
-            <div style={{ fontSize: "12px", marginTop: "4px" }}>卡片将显示在这里</div>
+            <div style={{ fontSize: "12px", marginTop: "4px" }}>
+              卡片将显示在这里
+            </div>
           </EmptyState>
         </Container>
       );
     }
 
     return (
-      <Container ref={ref} className={createClassName("card-list", `card-list--${alignmentStrategy}`, className)}>
+      <Container
+        ref={ref}
+        className={createClassName(
+          "card-list",
+          `card-list--${alignmentStrategy}`,
+          className
+        )}
+      >
         {/* 内联卡片 */}
         {needRenderedCards.map((card, index) => (
           <CardWrapper

@@ -9,8 +9,16 @@ import { defaultTheme, mergeTheme, generateCSSVariables } from "@/utils/theme";
 import { createClassName } from "@/utils/helpers";
 import { CardList } from "./CardList";
 import { VirtualListItemComponent } from "./VirtualListItem";
-import { CardProvider, useCardContext } from "./common/Context";
+import {
+  CardProvider,
+  createCardsWrappersArr,
+  getRy,
+  isYOverlap,
+  sortCardsWrappersArr,
+  useCardContext,
+} from "./common/Context";
 import { isEqual } from "lodash-es";
+import { getBoundingClientRect } from "./common/getBoundingClientRect";
 
 const Container = styled.div<{ $cssVariables: Record<string, string> }>`
   display: flex;
@@ -31,20 +39,28 @@ const Container = styled.div<{ $cssVariables: Record<string, string> }>`
   }
 `;
 
-const VirtuosoContainer = styled.div<{ $width: string | number; $gap: string | number }>`
-  flex: 0 0 ${(props) => (typeof props.$width === "number" ? `${props.$width}px` : props.$width)};
+const VirtuosoContainer = styled.div<{
+  $width: string | number;
+  $gap: string | number;
+}>`
+  flex: 0 0
+    ${(props) =>
+      typeof props.$width === "number" ? `${props.$width}px` : props.$width};
   height: 100%;
 
   @media (max-width: 768px) {
     flex: 1;
     border-right: none;
     border-bottom: 1px solid var(--vc-color-border);
-    margin-bottom: ${(props) => (typeof props.$gap === "number" ? `${props.$gap}px` : props.$gap)};
+    margin-bottom: ${(props) =>
+      typeof props.$gap === "number" ? `${props.$gap}px` : props.$gap};
   }
 `;
 
 const CardContainer = styled.div<{ $width: string | number }>`
-  flex: 0 0 ${(props) => (typeof props.$width === "number" ? `${props.$width}px` : props.$width)};
+  flex: 0 0
+    ${(props) =>
+      typeof props.$width === "number" ? `${props.$width}px` : props.$width};
   height: 100%;
 
   @media (max-width: 768px) {
@@ -73,13 +89,122 @@ export const VirtuosoCardLayout: React.FC<VirtuosoCardLayoutProps> = ({
   virtuosoProps = {},
 }) => {
   // 合并主题
-  const mergedTheme = useMemo(() => mergeTheme(defaultTheme, customTheme), [customTheme]);
-  const [customScrollParent, setCustomScrollParent] = React.useState(null);
-  const { cardsWrappers, renderedItems, setRenderedItems, setNeedRenderedCards, needRenderedCards, chainMoveCards } =
-    useCardContext();
+  const mergedTheme = useMemo(
+    () => mergeTheme(defaultTheme, customTheme),
+    [customTheme]
+  );
+  const [customScrollParent, setCustomScrollParent] =
+    React.useState<HTMLDivElement | null>(null);
+  const {
+    cardsWrappers,
+    renderedItems,
+    setRenderedItems,
+    setNeedRenderedCards,
+    needRenderedCards,
+    chainMoveCards,
+  } = useCardContext();
+
+  useEffect(() => {
+    if (!customScrollParent) {
+      return;
+    }
+    let offsetY = 0; // 内容的偏移量
+
+    const handleScroll = (e: WheelEvent) => {
+      const contentHeight = customScrollParent.scrollHeight;
+      const viewportHeight = customScrollParent.clientHeight;
+      const target = e.target as HTMLElement;
+      offsetY -= e.deltaY;
+      const maxOffset = 0;
+      const minOffset = viewportHeight - contentHeight;
+      // console.log("offsetY > 滚动距离", offsetY, maxOffset, minOffset);
+      if (offsetY > maxOffset) {
+        // console.log("offsetY > 已滚动到顶部", offsetY, maxOffset, minOffset);
+        offsetY = maxOffset;
+        /**
+         * 检测是否有卡片在顶部上面
+         */
+        const cardsWrappersArr = createCardsWrappersArr(cardsWrappers);
+        sortCardsWrappersArr(cardsWrappersArr);
+        const topCard = cardsWrappersArr[0];
+        const topCardRect = getBoundingClientRect(topCard.el);
+        const targetRect = getBoundingClientRect(customScrollParent);
+        console.log(
+          "offsetY > 已滚动到顶部",
+          offsetY,
+          topCardRect.top,
+          targetRect.top,
+          cardsWrappersArr
+        );
+        if (topCardRect.top < targetRect.top) {
+          let deltaY = e.deltaY;
+          if (topCardRect.top + deltaY >= targetRect.top) {
+            deltaY = topCardRect.top - topCardRect.top;
+          }
+          // 顶部卡片与滚动目标重叠
+          // chainMoveCards(topCard);
+          // 把所有的卡片朝着滚轮滚动的方向移动 e.deltaY 像素
+          cardsWrappersArr.forEach((cardWrapper) => {
+            const ry = getRy(cardWrapper.el);
+            const resRy = ry - deltaY;
+            cardWrapper.el.style.transition =
+              "transform .3s cubic-bezier(0, 0, .52, 1)";
+            cardWrapper.el.style.transform = `translateY(${resRy}px)`;
+            cardWrapper.el.setAttribute("ry", `${resRy}`);
+          });
+        }
+      }
+      if (offsetY < minOffset) {
+        /**
+         * 检测是否有卡片在底部下面
+         */
+
+        console.log("offsetY > 已滚动到底部", offsetY, minOffset);
+        offsetY = minOffset;
+      }
+      return;
+      /**
+       * 如果滚动到顶部，并且有卡片在顶部上面，那么随着滚动调整卡片的位置模拟出来滚动效果
+       * 如果滚动到底部，并且有卡片在底部下面，那么随着滚动调整卡片的位置模拟滚动效果
+       */
+      const scrollTop = target.scrollTop;
+      const bottom = target.scrollHeight - target.clientHeight;
+
+      if (scrollTop === 0) {
+        // 滚动到顶部
+        console.log("🚀 ~ handleScroll 已滚动到顶部:", scrollTop, target, e);
+        // const topAreaCards = Object.keys(cardsWrappers).slice(0, cardIndex);
+        // chainMoveCards(topAreaCards, {
+        //   moveY: -scrollTop,
+        // });
+      } else if (Math.floor(scrollTop) === Math.floor(bottom)) {
+        // 滚动到底部
+        console.log("🚀 ~ handleScroll 已滚动到底部:", scrollTop);
+        // 已经滚动到底部了，继续监听滚动事件
+
+        // const bottomAreaCards = Object.keys(cardsWrappers).slice(cardIndex + 1);
+        // chainMoveCards(bottomAreaCards, {
+        //   moveY: scrollTop - bottom,
+        // });
+      } else {
+        console.log("🚀 ~ handleScroll ~ scrollTop:", scrollTop, bottom);
+      }
+    };
+    if (customScrollParent) {
+      customScrollParent.addEventListener("wheel", handleScroll);
+    }
+    return () => {
+      if (customScrollParent) {
+        customScrollParent.removeEventListener("wheel", handleScroll);
+      }
+    };
+  }, [customScrollParent]);
 
   // 生成CSS变量
-  const cssVariables = useMemo(() => generateCSSVariables(mergedTheme), [mergedTheme]);
+  const cssVariables = useMemo(
+    () => generateCSSVariables(mergedTheme),
+    [mergedTheme]
+  );
 
   // 响应式布局
   const { getResponsiveLayout, isMobile } = useResponsive();
@@ -116,7 +241,12 @@ export const VirtuosoCardLayout: React.FC<VirtuosoCardLayoutProps> = ({
   // 默认项目渲染器
   const defaultItemRenderer = useCallback(
     (item: VirtualListItem, index: number) => (
-      <VirtualListItemComponent item={item} index={index} onClick={onItemClick} theme={mergedTheme} />
+      <VirtualListItemComponent
+        item={item}
+        index={index}
+        onClick={onItemClick}
+        theme={mergedTheme}
+      />
     ),
     [onItemClick, mergedTheme]
   );
@@ -150,11 +280,19 @@ export const VirtuosoCardLayout: React.FC<VirtuosoCardLayoutProps> = ({
         }}
         $cssVariables={cssVariables}
       >
-        <VirtuosoContainer $width={finalLayout.virtuosoWidth} $gap={finalLayout.gap} ref={setVirtuosoRef}>
+        <VirtuosoContainer
+          $width={finalLayout.virtuosoWidth}
+          $gap={finalLayout.gap}
+          ref={setVirtuosoRef}
+        >
           <Virtuoso
             data={items}
-            itemContent={(index, item) => (itemRenderer || defaultItemRenderer)(item, index)}
-            onScroll={(e) => handleScroll(e.target ? (e.target as HTMLElement).scrollTop : 0)}
+            itemContent={(index, item) =>
+              (itemRenderer || defaultItemRenderer)(item, index)
+            }
+            onScroll={(e) =>
+              handleScroll(e.target ? (e.target as HTMLElement).scrollTop : 0)
+            }
             {...virtuosoConfig}
             style={{ height: "100%" }}
             customScrollParent={customScrollParent}
@@ -167,15 +305,28 @@ export const VirtuosoCardLayout: React.FC<VirtuosoCardLayoutProps> = ({
             rangeChanged={(range) => {
               const vItems = items.slice(range.startIndex, range.endIndex + 1);
               const same = isEqual(vItems, renderedItems);
-              console.log("🚀 ~ same:", same, vItems, renderedItems);
+              console.log("🚀 ~ same:", range, same, vItems, renderedItems);
               if (same) return;
               setRenderedItems(vItems);
-              const renderedItemsLine = vItems.map((item) => item.metadata?.lineNumber);
-              const newNeedRenderedCards = visibleCards.filter((card) => renderedItemsLine.includes(card.lineNumber));
+              const renderedItemsLine = vItems.map(
+                (item) => item.metadata?.lineNumber
+              );
+              const newNeedRenderedCards = visibleCards.filter((card) =>
+                renderedItemsLine.includes(card.lineNumber)
+              );
 
-              const sameCards = isEqual(needRenderedCards, newNeedRenderedCards);
+              const sameCards = isEqual(
+                needRenderedCards,
+                newNeedRenderedCards
+              );
               if (sameCards) return;
-              console.log("🚀 ~ needRenderedCards:", needRenderedCards, newNeedRenderedCards, same, visibleCards);
+              console.log(
+                "🚀 ~ needRenderedCards:",
+                needRenderedCards,
+                newNeedRenderedCards,
+                same,
+                visibleCards
+              );
               setNeedRenderedCards(newNeedRenderedCards);
             }}
           />

@@ -6,15 +6,12 @@ import {
   ReactNode,
   useEffect,
 } from "react";
-// import { computePosition, autoUpdate, platform } from "@floating-ui/dom";
+
 import {
   computePosition,
   getBoundingClientRect,
 } from "./getBoundingClientRect";
-
-import alignElement from "../domAlign/src/index";
-import getRegion from "../domAlign/src/getRegion";
-import { transform } from "lodash-es";
+import { useDebounceEffect } from "ahooks";
 
 const getTargetLines = (cards: CardData[]) => {
   const lines = new Map<string, HTMLDivElement>();
@@ -30,6 +27,33 @@ const getTargetLines = (cards: CardData[]) => {
   console.log("element", lines.entries());
   return lines;
 };
+
+export const getRy = (el: HTMLElement) => Number(el.getAttribute("ry") || 0);
+export const isYOverlap = (a: DOMRect, b: DOMRect) => {
+  return a.top < b.bottom && b.top < a.bottom;
+};
+
+export const createCardsWrappersArr = (
+  cardsWrappers: Record<string, HTMLDivElement>
+) => {
+  return Object.keys(cardsWrappers)
+    .map((key) => ({
+      id: key,
+      el: cardsWrappers[key],
+    }))
+    .filter((item) => item.el.isConnected);
+};
+
+export const sortCardsWrappersArr = (
+  cardsWrappersArr: { id: string; el: HTMLDivElement }[]
+) => {
+  return cardsWrappersArr.sort((a, b) => {
+    const aRect = getBoundingClientRect(a.el);
+    const bRect = getBoundingClientRect(b.el);
+    return aRect.top - bRect.top;
+  });
+};
+
 const CardContext = createContext<{
   cards: CardData[];
   cardsWrappers: Record<string, HTMLDivElement>;
@@ -60,94 +84,97 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
   >({});
   const [renderedItems, setRenderedItems] = useState<VirtualListItem[]>([]);
   const [needRenderedCards, setNeedRenderedCards] = useState<CardData[]>([]);
-  // const [willUpdatePositions, setWillUpdatePositions] = useState<
-  //   Map<HTMLDivElement, { moveY: number; area: { start: number; end: number }; targetRect: DOMRect }>
-  // >(new Map());
 
-  useEffect(() => {
-    if (needRenderedCards.length) {
-      console.log("cardsWrappers", cardsWrappers, needRenderedCards);
-      // 清除 在needRenderedCards之外的卡片
+  useDebounceEffect(
+    () => {
+      if (needRenderedCards.length) {
+        const needAlignCards = needRenderedCards
+          .sort((a, b) => (a.lineNumber ?? 0) - (b.lineNumber ?? 0))
+          .map((card) => cardsWrappers[card.id]);
 
-      const needAlignCards = needRenderedCards
-        .sort((a, b) => (a.lineNumber ?? 0) - (b.lineNumber ?? 0))
-        .map((card) => cardsWrappers[card.id]);
-      // willUpdatePositions.forEach((_, key) => {
-      //   if (!needAlignCards.find((card) => card === key)) {
-      //     willUpdatePositions.delete(key);
-      //   }
-      // });
+        const targets = getTargetLines(needRenderedCards);
+        const batchUpdateCardsPostion = async (
+          cards: CardData[],
+          targets: Map<string, HTMLDivElement>
+        ) => {
+          // 对齐的过程中记录所有卡片调整之后的位置，新卡片调整位置的时候需要计算出不跟其他卡片重叠的位置
+          const willUpdatePositions = new Map<
+            HTMLDivElement,
+            {
+              moveY: number;
+              area: { start: number; end: number };
+              targetRect: DOMRect;
+            }
+          >();
+          for (const card of cards) {
+            if (card.lineNumber === undefined) continue;
 
-      const targets = getTargetLines(needRenderedCards);
-      const batchUpdateCardsPostion = async (
-        cards: CardData[],
-        targets: Map<string, HTMLDivElement>
-      ) => {
-        // 对齐的过程中记录所有卡片调整之后的位置，新卡片调整位置的时候需要计算出不跟其他卡片重叠的位置
-        const willUpdatePositions = new Map<
-          HTMLDivElement,
-          {
-            moveY: number;
-            area: { start: number; end: number };
-            targetRect: DOMRect;
-          }
-        >();
-        for (const card of cards) {
-          if (card.lineNumber === undefined) continue;
+            const targetEl = targets.get(card.id);
+            const cardEl = cardsWrappers[card.id];
 
-          const targetEl = targets.get(card.id);
-          const cardEl = cardsWrappers[card.id];
+            if (targetEl && cardEl) {
+              const { offsetY, targetRect, cardRect } = computePosition(
+                targetEl,
+                cardEl
+              );
+              const nextRegion = {
+                start: targetRect.y,
+                end: targetRect.y + cardRect.height,
+              };
+              const ry = Number(cardEl.getAttribute("ry") || 0);
+              /**
+               * TODO: 如果前面的卡片被卸载了，那么当前的卡片定位就不准了，如何保持原有位置
+               */
+              // if (cardEl.getAttribute("ry")) {
+              //   willUpdatePositions.set(cardEl, {
+              //     moveY: nextRegion.start - cardRect.top + ry,
+              //     area: nextRegion,
+              //     targetRect,
+              //   });
+              //   continue;
+              // }
+              for (const [, { area }] of willUpdatePositions.entries()) {
+                if (area) {
+                  if (
+                    nextRegion.start < area.end &&
+                    nextRegion.end > area.start
+                  ) {
+                    // 卡片顶部在目标底部下面，需要调整卡片位置
 
-          if (targetEl && cardEl) {
-            const { offsetY, targetRect, cardRect } = computePosition(
-              targetEl,
-              cardEl
-            );
-            const nextRegion = {
-              start: targetRect.y,
-              end: targetRect.y + cardRect.height,
-            };
-            for (const [, { area }] of willUpdatePositions.entries()) {
-              if (area) {
-                if (
-                  nextRegion.start < area.end &&
-                  nextRegion.end > area.start
-                ) {
-                  // 卡片顶部在目标底部下面，需要调整卡片位置
-
-                  nextRegion.start = area.end + 10;
-                  nextRegion.end = area.end + cardRect.height + 10;
+                    nextRegion.start = area.end + 10;
+                    nextRegion.end = area.end + cardRect.height + 10;
+                  }
                 }
               }
-            }
-            // debugger;
-            const ry = Number(cardEl.getAttribute("ry") || 0);
-            Object.assign(cardEl.style, {
-              position: "relative",
-              transform: `translateY(${
-                nextRegion.start - cardRect.top + ry
-              }px)`,
-            });
-            // 给cardEl添加自定义属性，记录调整后的位置
-            cardEl.setAttribute(
-              "ry",
-              `${nextRegion.start - cardRect.top + ry}`
-            );
+              Object.assign(cardEl.style, {
+                position: "relative",
+                transform: `translateY(${
+                  nextRegion.start - cardRect.top + ry
+                }px)`,
+              });
+              // 给cardEl添加自定义属性，记录调整后的位置
+              cardEl.setAttribute(
+                "ry",
+                `${nextRegion.start - cardRect.top + ry}`
+              );
 
-            willUpdatePositions.set(cardEl, {
-              moveY: nextRegion.start - cardRect.top + ry,
-              area: nextRegion,
-              targetRect,
-            });
+              willUpdatePositions.set(cardEl, {
+                moveY: nextRegion.start - cardRect.top + ry,
+                area: nextRegion,
+                targetRect,
+              });
+            }
           }
-        }
-      };
-      // 计算Y轴方向上是否有重叠
-      //TODO： focuscard之后再次滚动位置混乱
-      batchUpdateCardsPostion(needRenderedCards, targets);
-      console.log("cardsWrappers needAlignCards", needAlignCards, targets);
-    }
-  }, [needRenderedCards]);
+        };
+
+        //TODO： focuscard之后再次滚动位置混乱
+        batchUpdateCardsPostion(needRenderedCards, targets);
+        console.log("cardsWrappers needAlignCards", needAlignCards, targets);
+      }
+    },
+    [needRenderedCards],
+    { wait: 100 }
+  );
   const hilightTarget = <T extends HTMLElement>(targetEl?: T) => {
     if (!targetEl) return;
     targetEl.style.backgroundColor = "red";
@@ -157,22 +184,11 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
     }, 2000);
   };
 
-  const getRy = (el: HTMLElement) => Number(el.getAttribute("ry") || 0);
-  const isYOverlap = (a: DOMRect, b: DOMRect) => {
-    return a.top < b.bottom && b.top < a.bottom;
-  };
   const chainMoveCards = async (card: CardData) => {
     const cardEl = cardsWrappers[card.id];
 
-    const cardsWrappersArr = Object.keys(cardsWrappers).map((key) => ({
-      id: key,
-      el: cardsWrappers[key],
-    }));
-    cardsWrappersArr.sort((a, b) => {
-      const aRect = getBoundingClientRect(a.el);
-      const bRect = getBoundingClientRect(b.el);
-      return aRect.top - bRect.top;
-    });
+    const cardsWrappersArr = createCardsWrappersArr(cardsWrappers);
+    sortCardsWrappersArr(cardsWrappersArr);
 
     const targets = getTargetLines(needRenderedCards);
     const targetEl = targets.get(card.id);
@@ -210,8 +226,8 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
         relativeY,
       });
       //TODO：在这里更新位置是正确的， 但是涉及到向上向下移动之后，向上的卡片移动的位置刚好超出魔表位置一个卡片的高度
+      // 检查了一下发现是把卡片id转换成Number导致的， 因为卡片id是string类型， 所以在比较的时候会出现问题
 
-      // return;
       if (offsetY > 0) {
         // 向下移动
         movedArea.bottom = movedArea.bottom + offsetY;
