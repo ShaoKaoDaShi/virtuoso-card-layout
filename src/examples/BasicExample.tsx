@@ -7,8 +7,8 @@ import { generateCards, generateListItems } from "./common/mockData";
 /**
  * 基础使用示例 - 展示Virtuoso虚拟滚动与卡片列表的基本功能
  */
-const LineCount = 5;
-const CardCount = 4;
+const LineCount = 100;
+const CardCount = 40;
 export const BasicExample: React.FC = () => {
   const [items] = useState(() => generateListItems(LineCount));
   const [cards, setCards] = useState(() =>
