@@ -50,23 +50,26 @@ export const generateCards = (
   ];
   const priorities: CardData["priority"][] = ["high", "medium", "low"];
 
-  return Array.from({ length: count }, (_, index) => ({
-    id: nanoid(),
-    repoId,
-    type: cardTypes[index % cardTypes.length],
-    priority: priorities[index % priorities.length],
-    content: `
+  return Array.from({ length: count }, (_, index) => {
+    const lineNumber = Math.floor(Math.random() * (lineCount || 100000)) + 1;
+    return {
+      id: nanoid(),
+      repoId,
+      type: cardTypes[index % cardTypes.length],
+      priority: priorities[index % priorities.length],
+      content: `
         <div>
           <p><strong>卡片 ${index + 1}</strong></p>
           <p>这是一个示例卡片，展示了不同类型的内容。</p>
-          <p>行号: ${Math.floor(Math.random() * (lineCount || 100000)) + 1}</p>
+          <p>行号: ${lineNumber}</p>
         </div>
       `,
-    lineNumber: Math.floor(Math.random() * (lineCount || 100000)) + 1,
-    metadata: {
-      author: "开发者",
-      timestamp: Date.now() - Math.random() * 86400000,
-      tags: ["示例", "测试"],
-    },
-  }));
+      lineNumber,
+      metadata: {
+        author: "开发者",
+        timestamp: Date.now() - Math.random() * 86400000,
+        tags: ["示例", "测试"],
+      },
+    };
+  });
 };
