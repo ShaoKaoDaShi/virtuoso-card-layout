@@ -1,7 +1,16 @@
 import { CardData, VirtualListItem } from "@/types";
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+} from "react";
 // import { computePosition, autoUpdate, platform } from "@floating-ui/dom";
-import { computePosition, getBoundingClientRect } from "./getBoundingClientRect";
+import {
+  computePosition,
+  getBoundingClientRect,
+} from "./getBoundingClientRect";
 
 import alignElement from "../domAlign/src/index";
 import getRegion from "../domAlign/src/getRegion";
@@ -11,7 +20,9 @@ const getTargetLines = (cards: CardData[]) => {
   const lines = new Map<string, HTMLDivElement>();
   cards.forEach((card) => {
     if (card.lineNumber === undefined) return;
-    const element = document.querySelector(`[uniq-card-key="${card.lineNumber}"]`) as HTMLDivElement;
+    const element = document.querySelector(
+      `[uniq-card-key="${card.lineNumber}"]`
+    ) as HTMLDivElement;
     if (element) {
       lines.set(card.id, element);
     }
@@ -44,7 +55,9 @@ const CardContext = createContext<{
 // 在Provider中提供setCards方法
 export const CardProvider = ({ children }: { children: ReactNode }) => {
   const [cards, setCards] = useState<CardData[]>([]);
-  const [cardsWrappers, setCardsWrappers] = useState<Record<string, HTMLDivElement>>({});
+  const [cardsWrappers, setCardsWrappers] = useState<
+    Record<string, HTMLDivElement>
+  >({});
   const [renderedItems, setRenderedItems] = useState<VirtualListItem[]>([]);
   const [needRenderedCards, setNeedRenderedCards] = useState<CardData[]>([]);
   // const [willUpdatePositions, setWillUpdatePositions] = useState<
@@ -66,7 +79,10 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
       // });
 
       const targets = getTargetLines(needRenderedCards);
-      const batchUpdateCardsPostion = async (cards: CardData[], targets: Map<string, HTMLDivElement>) => {
+      const batchUpdateCardsPostion = async (
+        cards: CardData[],
+        targets: Map<string, HTMLDivElement>
+      ) => {
         // 对齐的过程中记录所有卡片调整之后的位置，新卡片调整位置的时候需要计算出不跟其他卡片重叠的位置
         const willUpdatePositions = new Map<
           HTMLDivElement,
@@ -83,14 +99,20 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
           const cardEl = cardsWrappers[card.id];
 
           if (targetEl && cardEl) {
-            const { offsetY, targetRect, cardRect } = computePosition(targetEl, cardEl);
+            const { offsetY, targetRect, cardRect } = computePosition(
+              targetEl,
+              cardEl
+            );
             const nextRegion = {
               start: targetRect.y,
               end: targetRect.y + cardRect.height,
             };
             for (const [, { area }] of willUpdatePositions.entries()) {
               if (area) {
-                if (nextRegion.start < area.end && nextRegion.end > area.start) {
+                if (
+                  nextRegion.start < area.end &&
+                  nextRegion.end > area.start
+                ) {
                   // 卡片顶部在目标底部下面，需要调整卡片位置
 
                   nextRegion.start = area.end + 10;
@@ -102,10 +124,15 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
             const ry = Number(cardEl.getAttribute("ry") || 0);
             Object.assign(cardEl.style, {
               position: "relative",
-              transform: `translateY(${nextRegion.start - cardRect.top + ry}px)`,
+              transform: `translateY(${
+                nextRegion.start - cardRect.top + ry
+              }px)`,
             });
             // 给cardEl添加自定义属性，记录调整后的位置
-            cardEl.setAttribute("ry", `${nextRegion.start - cardRect.top + ry}`);
+            cardEl.setAttribute(
+              "ry",
+              `${nextRegion.start - cardRect.top + ry}`
+            );
 
             willUpdatePositions.set(cardEl, {
               moveY: nextRegion.start - cardRect.top + ry,
@@ -131,21 +158,33 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getRy = (el: HTMLElement) => Number(el.getAttribute("ry") || 0);
+  const isYOverlap = (a: DOMRect, b: DOMRect) => {
+    return a.top < b.bottom && b.top < a.bottom;
+  };
   const chainMoveCards = async (card: CardData) => {
     const cardEl = cardsWrappers[card.id];
 
-    const cardsWrappersArr = Object.keys(cardsWrappers).map((key) => ({ id: key, el: cardsWrappers[key] }));
+    const cardsWrappersArr = Object.keys(cardsWrappers).map((key) => ({
+      id: key,
+      el: cardsWrappers[key],
+    }));
     cardsWrappersArr.sort((a, b) => {
       const aRect = getBoundingClientRect(a.el);
       const bRect = getBoundingClientRect(b.el);
       return aRect.top - bRect.top;
     });
+
     const targets = getTargetLines(needRenderedCards);
     const targetEl = targets.get(card.id);
     hilightTarget(targetEl);
-    const cardIndex = cardsWrappersArr.findIndex((item) => Number(item.id) === Number(card.id));
-    const topAreaCards = cardsWrappersArr.slice(0, cardIndex);
+    const cardIndex = cardsWrappersArr.findIndex((item) => item.id === card.id);
 
+    const topAreaCards = cardsWrappersArr.slice(0, cardIndex);
+    console.log(
+      "🚀 ~ chainMoveCards ~ cardsWrappersArr:",
+      topAreaCards,
+      cardsWrappersArr
+    );
     const shouldUpdatePositionsCards = [];
     if (targetEl && cardEl) {
       const cardRect = getBoundingClientRect(cardEl);
@@ -153,7 +192,13 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
       const { offsetY } = computePosition(targetEl, cardEl);
 
       const relativeY = offsetY + ry;
-      console.log("🚀 ~ chainMoveCards ~ relativeY:", relativeY, offsetY, ry, Math.floor(offsetY));
+      console.log(
+        "🚀 ~ chainMoveCards ~ relativeY:",
+        relativeY,
+        offsetY,
+        ry,
+        Math.floor(offsetY)
+      );
       const movedArea = {
         top: cardRect.top,
         bottom: cardRect.bottom,
@@ -165,19 +210,10 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
         relativeY,
       });
       //TODO：在这里更新位置是正确的， 但是涉及到向上向下移动之后，向上的卡片移动的位置刚好超出魔表位置一个卡片的高度
-      for (let card of shouldUpdatePositionsCards) {
-        const resY = card.relativeY;
-        card.el.setAttribute("ry", `${resY}`);
-        Object.assign(card.el.style, {
-          position: "relative",
-          transform: `translateY(${resY}px)`,
-          transition: "transform 0.1s ease-in-out",
-        });
-      }
-      return;
+
+      // return;
       if (offsetY > 0) {
         // 向下移动
-        // shouldUpdatePositionsCards.push(...bottomAreaCards);
       } else {
         movedArea.top = movedArea.top + offsetY;
         for (let i = topAreaCards.length - 1; i >= 0; i--) {
@@ -185,7 +221,7 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
           const topCardRect = getBoundingClientRect(topCard.el);
           const topCardBottom = topCardRect.bottom;
           const topCardTop = topCardRect.top;
-          if (movedArea.top < topCardBottom && movedArea.bottom > topCardTop) {
+          if (isYOverlap(movedArea, topCardRect)) {
             const topCardRy = getRy(topCard.el);
             const offsetY = movedArea.top - (topCardBottom + 10);
             const relativeY = offsetY + topCardRy;
@@ -196,6 +232,15 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
             movedArea.top = movedArea.top - (topCardRect.height + 10);
           }
         }
+      }
+      for (let card of shouldUpdatePositionsCards) {
+        const resY = card.relativeY;
+        card.el.setAttribute("ry", `${resY}`);
+        Object.assign(card.el.style, {
+          position: "relative",
+          transform: `translateY(${resY}px)`,
+          transition: "transform 0.1s ease-in-out",
+        });
       }
     }
   };

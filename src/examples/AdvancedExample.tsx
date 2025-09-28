@@ -38,10 +38,13 @@ export const AdvancedExample: React.FC = () => {
   }, []);
 
   // 处理项目点击
-  const handleItemClick = useCallback((item: VirtualListItem, index: number) => {
-    console.log("点击了项目:", item, "索引:", index);
-    // alert(`点击了第 ${index + 1} 项`);
-  }, []);
+  const handleItemClick = useCallback(
+    (item: VirtualListItem, index: number) => {
+      console.log("点击了项目:", item, "索引:", index);
+      // alert(`点击了第 ${index + 1} 项`);
+    },
+    []
+  );
 
   // 处理卡片点击
   const handleCardClick = useCallback((card: CardData) => {
@@ -60,10 +63,23 @@ export const AdvancedExample: React.FC = () => {
   }, []);
 
   return (
-    <div style={{ padding: "20px", height: "100vh", display: "flex", flexDirection: "column" }}>
+    <div
+      style={{
+        padding: "20px",
+        height: "71vh",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <div style={{ marginBottom: "20px" }}>
-        <h1 style={{ margin: "0 0 10px 0", fontSize: "24px", fontWeight: "bold" }}>VirtuosoGroup卡片布局 - 基础示例</h1>
-        <p style={{ margin: "0 0 15px 0", color: "#666" }}>展示虚拟滚动列表与卡片列表的并排布局和高度同步功能</p>
+        <h1
+          style={{ margin: "0 0 10px 0", fontSize: "24px", fontWeight: "bold" }}
+        >
+          VirtuosoGroup卡片布局 - 基础示例
+        </h1>
+        <p style={{ margin: "0 0 15px 0", color: "#666" }}>
+          展示虚拟滚动列表与卡片列表的并排布局和高度同步功能
+        </p>
 
         <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
           <span
