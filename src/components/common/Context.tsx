@@ -24,7 +24,6 @@ const getTargetLines = (cards: CardData[]) => {
       lines.set(card.id, element);
     }
   });
-  console.log("element", lines.entries());
   return lines;
 };
 
@@ -87,6 +86,7 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
 
   useDebounceEffect(
     () => {
+      // 一定程度上保存卡片的状态
       if (needRenderedCards.length) {
         const needAlignCards = needRenderedCards
           .sort((a, b) => (a.lineNumber ?? 0) - (b.lineNumber ?? 0))
@@ -173,7 +173,7 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
       }
     },
     [needRenderedCards],
-    { wait: 100 }
+    { wait: 16 }
   );
   const hilightTarget = <T extends HTMLElement>(targetEl?: T) => {
     if (!targetEl) return;
@@ -280,6 +280,12 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
           transform: `translateY(${resY}px)`,
           transition: "transform 0.1s ease-in-out",
         });
+        const id = setTimeout(() => {
+          Object.assign(card.el.style, {
+            transition: "",
+          });
+          clearTimeout(id);
+        }, 100);
       }
     }
   };

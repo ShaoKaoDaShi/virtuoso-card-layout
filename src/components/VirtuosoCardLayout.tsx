@@ -17,7 +17,7 @@ import {
   sortCardsWrappersArr,
   useCardContext,
 } from "./common/Context";
-import { isEqual } from "lodash-es";
+import { debounce, isEqual, throttle } from "lodash-es";
 import { getBoundingClientRect } from "./common/getBoundingClientRect";
 
 const Container = styled.div<{ $cssVariables: Record<string, string> }>`
@@ -108,19 +108,20 @@ export const VirtuosoCardLayout: React.FC<VirtuosoCardLayoutProps> = ({
     if (!customScrollParent) {
       return;
     }
-    let offsetY = 0; // 内容的偏移量
 
-    const handleScroll = (e: WheelEvent) => {
+    const handleScroll = throttle((e: WheelEvent) => {
       const contentHeight = customScrollParent.scrollHeight;
       const viewportHeight = customScrollParent.clientHeight;
-      const target = e.target as HTMLElement;
-      offsetY -= e.deltaY;
-      const maxOffset = 0;
-      const minOffset = viewportHeight - contentHeight;
-      // console.log("offsetY > 滚动距离", offsetY, maxOffset, minOffset);
-      if (offsetY > maxOffset) {
-        // console.log("offsetY > 已滚动到顶部", offsetY, maxOffset, minOffset);
-        offsetY = maxOffset;
+      const scrollTop = customScrollParent.scrollTop;
+
+      const isAtBottom = contentHeight - scrollTop - viewportHeight < 1;
+      if (scrollTop < 1) {
+        console.log(
+          "offsetY > 已滚动到顶部",
+          e.deltaY,
+          scrollTop,
+          customScrollParent
+        );
         /**
          * 检测是否有卡片在顶部上面
          */
@@ -129,17 +130,11 @@ export const VirtuosoCardLayout: React.FC<VirtuosoCardLayoutProps> = ({
         const topCard = cardsWrappersArr[0];
         const topCardRect = getBoundingClientRect(topCard.el);
         const targetRect = getBoundingClientRect(customScrollParent);
-        console.log(
-          "offsetY > 已滚动到顶部",
-          offsetY,
-          topCardRect.top,
-          targetRect.top,
-          cardsWrappersArr
-        );
+
         if (topCardRect.top < targetRect.top) {
           let deltaY = e.deltaY;
-          if (topCardRect.top + deltaY >= targetRect.top) {
-            deltaY = topCardRect.top - topCardRect.top;
+          if (topCardRect.top - deltaY >= targetRect.top) {
+            deltaY = topCardRect.top - targetRect.top;
           }
           // 顶部卡片与滚动目标重叠
           // chainMoveCards(topCard);
@@ -147,49 +142,53 @@ export const VirtuosoCardLayout: React.FC<VirtuosoCardLayoutProps> = ({
           cardsWrappersArr.forEach((cardWrapper) => {
             const ry = getRy(cardWrapper.el);
             const resRy = ry - deltaY;
-            cardWrapper.el.style.transition =
-              "transform .3s cubic-bezier(0, 0, .52, 1)";
+            // cardWrapper.el.style.transition =
+            //   "transform .1s cubic-bezier(0, 0, .52, 1)";
             cardWrapper.el.style.transform = `translateY(${resRy}px)`;
             cardWrapper.el.setAttribute("ry", `${resRy}`);
           });
         }
       }
-      if (offsetY < minOffset) {
+      if (isAtBottom) {
+        // console.log("offsetY > 已滚动到底部", e.deltaY);
         /**
          * 检测是否有卡片在底部下面
          */
+        const cardsWrappersArr = createCardsWrappersArr(cardsWrappers);
+        sortCardsWrappersArr(cardsWrappersArr);
+        const bottomCard = cardsWrappersArr[cardsWrappersArr.length - 1];
+        const bottomCardRect = getBoundingClientRect(bottomCard.el);
+        const targetRect = getBoundingClientRect(customScrollParent);
 
-        console.log("offsetY > 已滚动到底部", offsetY, minOffset);
-        offsetY = minOffset;
+        if (bottomCardRect.bottom > targetRect.bottom) {
+          let deltaY = e.deltaY;
+          if (bottomCardRect.bottom - deltaY <= targetRect.bottom) {
+            deltaY = bottomCardRect.bottom - targetRect.bottom;
+          }
+          console.log(
+            "offsetY > 已滚动到顶部",
+            e.deltaY,
+            deltaY,
+            scrollTop,
+            bottomCardRect,
+            targetRect
+          );
+          cardsWrappersArr.forEach((cardWrapper) => {
+            const ry = getRy(cardWrapper.el);
+            const resRy = ry - deltaY;
+            // cardWrapper.el.style.transition =
+            //   "transform .1s cubic-bezier(0, 0, .52, 1)";
+            cardWrapper.el.style.transform = `translateY(${resRy}px)`;
+            cardWrapper.el.setAttribute("ry", `${resRy}`);
+            // const id = setTimeout(() => {
+            //   cardWrapper.el.style.transition = "";
+            //   clearTimeout(id);
+            // }, 100);
+          });
+        }
       }
       return;
-      /**
-       * 如果滚动到顶部，并且有卡片在顶部上面，那么随着滚动调整卡片的位置模拟出来滚动效果
-       * 如果滚动到底部，并且有卡片在底部下面，那么随着滚动调整卡片的位置模拟滚动效果
-       */
-      const scrollTop = target.scrollTop;
-      const bottom = target.scrollHeight - target.clientHeight;
-
-      if (scrollTop === 0) {
-        // 滚动到顶部
-        console.log("🚀 ~ handleScroll 已滚动到顶部:", scrollTop, target, e);
-        // const topAreaCards = Object.keys(cardsWrappers).slice(0, cardIndex);
-        // chainMoveCards(topAreaCards, {
-        //   moveY: -scrollTop,
-        // });
-      } else if (Math.floor(scrollTop) === Math.floor(bottom)) {
-        // 滚动到底部
-        console.log("🚀 ~ handleScroll 已滚动到底部:", scrollTop);
-        // 已经滚动到底部了，继续监听滚动事件
-
-        // const bottomAreaCards = Object.keys(cardsWrappers).slice(cardIndex + 1);
-        // chainMoveCards(bottomAreaCards, {
-        //   moveY: scrollTop - bottom,
-        // });
-      } else {
-        console.log("🚀 ~ handleScroll ~ scrollTop:", scrollTop, bottom);
-      }
-    };
+    }, 16);
     if (customScrollParent) {
       customScrollParent.addEventListener("wheel", handleScroll);
     }
@@ -263,9 +262,9 @@ export const VirtuosoCardLayout: React.FC<VirtuosoCardLayoutProps> = ({
 
   // Virtuoso配置
   const virtuosoConfig = {
-    overscan: 3600,
-    increaseViewportBy: 1800,
     ...virtuosoProps,
+    overscan: 1600,
+    increaseViewportBy: 800,
   };
 
   return (

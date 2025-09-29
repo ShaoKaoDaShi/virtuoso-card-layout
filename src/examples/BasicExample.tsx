@@ -147,10 +147,6 @@ export const BasicExample: React.FC = () => {
           onCardClick={handleCardClick}
           onScroll={handleScroll}
           onHeightChange={handleHeightChange}
-          virtuosoProps={{
-            overscan: 3600,
-            increaseViewportBy: 1800,
-          }}
         />
       </div>
     </div>
