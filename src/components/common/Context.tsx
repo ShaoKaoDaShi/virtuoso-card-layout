@@ -88,7 +88,7 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
     () => {
       // 一定程度上保存卡片的状态
       if (needRenderedCards.length) {
-        const needAlignCards = needRenderedCards
+        const needAlignCards = [...needRenderedCards]
           .sort((a, b) => (a.lineNumber ?? 0) - (b.lineNumber ?? 0))
           .map((card) => cardsWrappers[card.id]);
 
@@ -111,7 +111,24 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
 
             const targetEl = targets.get(card.id);
             const cardEl = cardsWrappers[card.id];
-
+            // if (cardEl.getAttribute("ot")) {
+            //   const ot = Number(cardEl.getAttribute("ot") || 0);
+            //   if (ot !== cardEl.offsetTop) {
+            //     const moveY = cardEl.offsetTop - ot;
+            //     const ry = Number(cardEl.getAttribute("ry") || 0);
+            //     cardEl.style.transform = `translateY(${ry - moveY}px)`;
+            //     cardEl.setAttribute("ry", `${ry - moveY}`);
+            //   }
+            // }
+            // if (cardEl.getAttribute("ry")) {
+            //   const ry = Number(cardEl.getAttribute("ry") || 0);
+            //   const cardRect = getBoundingClientRect(cardEl);
+            //   willUpdatePositions.set(cardEl, {
+            //     moveY: ry,
+            //     area: { start: cardRect.top, end: cardRect.bottom },
+            //   });
+            //   continue;
+            // }
             if (targetEl && cardEl) {
               const { offsetY, targetRect, cardRect } = computePosition(
                 targetEl,
@@ -157,6 +174,7 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
                 "ry",
                 `${nextRegion.start - cardRect.top + ry}`
               );
+              cardEl.setAttribute("ot", `${cardEl.offsetTop}`);
 
               willUpdatePositions.set(cardEl, {
                 moveY: nextRegion.start - cardRect.top + ry,
