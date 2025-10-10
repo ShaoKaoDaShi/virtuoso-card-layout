@@ -28,12 +28,18 @@ const getTargetLines = (cards: CardData[]) => {
 };
 
 export const getRy = (el: HTMLElement) => Number(el.getAttribute("ry") || 0);
-export const isYOverlap = (a: DOMRect, b: DOMRect) => {
+type PositionAreaItem = {
+  el: HTMLElement;
+  relativeY: number;
+};
+type PositionDomeItem = { id: string; el: HTMLElement };
+export type Position = { top: number; bottom: number; [key: string]: any };
+export const isYOverlap = (a: Position, b: Position) => {
   return a.top < b.bottom && b.top < a.bottom;
 };
 
 export const createCardsWrappersArr = (
-  cardsWrappers: Record<string, HTMLDivElement>
+  cardsWrappers: Record<string, HTMLElement>
 ) => {
   return Object.keys(cardsWrappers)
     .map((key) => ({
@@ -130,13 +136,13 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
             //   continue;
             // }
             if (targetEl && cardEl) {
-              const { offsetY, targetRect, cardRect } = computePosition(
+              const { offsetY, targetRect, sourceRect } = computePosition(
                 targetEl,
                 cardEl
               );
               const nextRegion = {
                 start: targetRect.y,
-                end: targetRect.y + cardRect.height,
+                end: targetRect.y + sourceRect.height,
               };
               const ry = Number(cardEl.getAttribute("ry") || 0);
               /**
@@ -159,25 +165,25 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
                     // 卡片顶部在目标底部下面，需要调整卡片位置
 
                     nextRegion.start = area.end + 10;
-                    nextRegion.end = area.end + cardRect.height + 10;
+                    nextRegion.end = area.end + sourceRect.height + 10;
                   }
                 }
               }
               Object.assign(cardEl.style, {
                 position: "relative",
                 transform: `translateY(${
-                  nextRegion.start - cardRect.top + ry
+                  nextRegion.start - sourceRect.top + ry
                 }px)`,
               });
               // 给cardEl添加自定义属性，记录调整后的位置
               cardEl.setAttribute(
                 "ry",
-                `${nextRegion.start - cardRect.top + ry}`
+                `${nextRegion.start - sourceRect.top + ry}`
               );
               cardEl.setAttribute("ot", `${cardEl.offsetTop}`);
 
               willUpdatePositions.set(cardEl, {
-                moveY: nextRegion.start - cardRect.top + ry,
+                moveY: nextRegion.start - sourceRect.top + ry,
                 area: nextRegion,
                 targetRect,
               });
@@ -201,6 +207,49 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
       clearTimeout(clearHilight);
     }, 2000);
   };
+  function moveDownCards(
+    bottomAreaCards: PositionDomeItem[],
+    movedArea: { top: number; bottom: number },
+    shouldUpdatePositionsCards: PositionAreaItem[]
+  ) {
+    for (let i = 0; i < bottomAreaCards.length; i++) {
+      const bottomCard = bottomAreaCards[i];
+      const bottomCardRect = getBoundingClientRect(bottomCard.el);
+      const bottomCardTop = bottomCardRect.top;
+      if (isYOverlap(movedArea, bottomCardRect)) {
+        const bottomCardRy = getRy(bottomCard.el);
+        const offsetY = movedArea.bottom - (bottomCardTop - 10);
+        const relativeY = offsetY + bottomCardRy;
+        shouldUpdatePositionsCards.push({
+          el: bottomCard.el,
+          relativeY,
+        });
+        movedArea.bottom = movedArea.bottom + (bottomCardRect.height + 10);
+      }
+    }
+  }
+
+  function moveUpCards(
+    topAreaCards: PositionDomeItem[],
+    movedArea: { top: number; bottom: number },
+    shouldUpdatePositionsCards: PositionAreaItem[]
+  ) {
+    for (let i = topAreaCards.length - 1; i >= 0; i--) {
+      const topCard = topAreaCards[i];
+      const topCardRect = getBoundingClientRect(topCard.el);
+      const topCardBottom = topCardRect.bottom;
+      if (isYOverlap(movedArea, topCardRect)) {
+        const topCardRy = getRy(topCard.el);
+        const offsetY = movedArea.top - (topCardBottom + 10);
+        const relativeY = offsetY + topCardRy;
+        shouldUpdatePositionsCards.push({
+          el: topCard.el,
+          relativeY,
+        });
+        movedArea.top = movedArea.top - (topCardRect.height + 10);
+      }
+    }
+  }
 
   const chainMoveCards = async (card: CardData) => {
     const cardEl = cardsWrappers[card.id];
@@ -214,25 +263,16 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
     const cardIndex = cardsWrappersArr.findIndex((item) => item.id === card.id);
 
     const topAreaCards = cardsWrappersArr.slice(0, cardIndex);
-    console.log(
-      "🚀 ~ chainMoveCards ~ cardsWrappersArr:",
-      topAreaCards,
-      cardsWrappersArr
-    );
-    const shouldUpdatePositionsCards = [];
+    const bottomAreaCards = cardsWrappersArr.slice(cardIndex + 1);
+
+    const shouldUpdatePositionsCards: PositionAreaItem[] = [];
     if (targetEl && cardEl) {
       const cardRect = getBoundingClientRect(cardEl);
       const ry = getRy(cardEl);
       const { offsetY } = computePosition(targetEl, cardEl);
 
       const relativeY = offsetY + ry;
-      console.log(
-        "🚀 ~ chainMoveCards ~ relativeY:",
-        relativeY,
-        offsetY,
-        ry,
-        Math.floor(offsetY)
-      );
+
       const movedArea = {
         top: cardRect.top,
         bottom: cardRect.bottom,
@@ -249,46 +289,10 @@ export const CardProvider = ({ children }: { children: ReactNode }) => {
       if (offsetY > 0) {
         // 向下移动
         movedArea.bottom = movedArea.bottom + offsetY;
-        function moveDownCards() {
-          for (let i = cardIndex + 1; i < cardsWrappersArr.length; i++) {
-            const bottomCard = cardsWrappersArr[i];
-            const bottomCardRect = getBoundingClientRect(bottomCard.el);
-            const bottomCardTop = bottomCardRect.top;
-            if (isYOverlap(movedArea, bottomCardRect)) {
-              const bottomCardRy = getRy(bottomCard.el);
-              const offsetY = movedArea.bottom - (bottomCardTop - 10);
-              const relativeY = offsetY + bottomCardRy;
-              shouldUpdatePositionsCards.push({
-                el: bottomCard.el,
-                relativeY,
-              });
-              movedArea.bottom =
-                movedArea.bottom + (bottomCardRect.height + 10);
-            }
-          }
-        }
-        moveDownCards();
+        moveDownCards(bottomAreaCards, movedArea, shouldUpdatePositionsCards);
       } else {
         movedArea.top = movedArea.top + offsetY;
-
-        function moveUpCards() {
-          for (let i = topAreaCards.length - 1; i >= 0; i--) {
-            const topCard = topAreaCards[i];
-            const topCardRect = getBoundingClientRect(topCard.el);
-            const topCardBottom = topCardRect.bottom;
-            if (isYOverlap(movedArea, topCardRect)) {
-              const topCardRy = getRy(topCard.el);
-              const offsetY = movedArea.top - (topCardBottom + 10);
-              const relativeY = offsetY + topCardRy;
-              shouldUpdatePositionsCards.push({
-                el: topCard.el,
-                relativeY,
-              });
-              movedArea.top = movedArea.top - (topCardRect.height + 10);
-            }
-          }
-        }
-        moveUpCards();
+        moveUpCards(topAreaCards, movedArea, shouldUpdatePositionsCards);
       }
       for (let card of shouldUpdatePositionsCards) {
         const resY = card.relativeY;

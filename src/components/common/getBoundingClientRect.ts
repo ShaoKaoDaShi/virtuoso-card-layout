@@ -32,7 +32,12 @@ export interface GetBoundingClientRectOptions {
 }
 
 function isElement(value: any): value is Element {
-  return value != null && typeof value === "object" && "nodeType" in value && value.nodeType === 1;
+  return (
+    value != null &&
+    typeof value === "object" &&
+    "nodeType" in value &&
+    value.nodeType === 1
+  );
 }
 
 function isHTMLElement(value: any): value is HTMLElement {
@@ -82,7 +87,9 @@ function getCssDimensions(element: HTMLElement) {
   const height = parseFloat(computedStyle.height);
 
   const $ =
-    window.devicePixelRatio > 1 && !Number.isInteger(width) && Number.isInteger(element.getBoundingClientRect().width);
+    window.devicePixelRatio > 1 &&
+    !Number.isInteger(width) &&
+    Number.isInteger(element.getBoundingClientRect().width);
 
   return { width, height, $ };
 }
@@ -112,7 +119,10 @@ function getScale(element: Element | VirtualElement): Coords {
 }
 
 function isWebKit(): boolean {
-  return /AppleWebKit/i.test(navigator.userAgent) && !/Chrome/i.test(navigator.userAgent);
+  return (
+    /AppleWebKit/i.test(navigator.userAgent) &&
+    !/Chrome/i.test(navigator.userAgent)
+  );
 }
 
 function getVisualOffsets(domElement: Element): Coords {
@@ -156,7 +166,9 @@ export function getBoundingClientRect(
     scale = getScale(domElement);
   }
 
-  const visualOffsets: Coords = domElement ? getVisualOffsets(domElement) : createCoords(0);
+  const visualOffsets: Coords = domElement
+    ? getVisualOffsets(domElement)
+    : createCoords(0);
 
   let x = (clientRect.left + visualOffsets.x) / scale.x;
   let y = (clientRect.top + visualOffsets.y) / scale.y;
@@ -165,7 +177,10 @@ export function getBoundingClientRect(
 
   if (domElement) {
     const win = getWindow(domElement);
-    const offsetWin = offsetParent && isElement(offsetParent) ? getWindow(offsetParent) : offsetParent;
+    const offsetWin =
+      offsetParent && isElement(offsetParent)
+        ? getWindow(offsetParent)
+        : offsetParent;
 
     let currentWin = win;
     let currentIFrame = getFrameElement(currentWin);
@@ -175,8 +190,13 @@ export function getBoundingClientRect(
       const iframeRect = currentIFrame.getBoundingClientRect();
       const css = getComputedStyle(currentIFrame);
 
-      const left = iframeRect.left + (currentIFrame.clientLeft + parseFloat(css.paddingLeft)) * iframeScale.x;
-      const top = iframeRect.top + (currentIFrame.clientTop + parseFloat(css.paddingTop)) * iframeScale.y;
+      const left =
+        iframeRect.left +
+        (currentIFrame.clientLeft + parseFloat(css.paddingLeft)) *
+          iframeScale.x;
+      const top =
+        iframeRect.top +
+        (currentIFrame.clientTop + parseFloat(css.paddingTop)) * iframeScale.y;
 
       x *= iframeScale.x;
       y *= iframeScale.y;
@@ -207,11 +227,11 @@ export function clearRelativePosition(element: Element) {
   }
 }
 
-export function computePosition(targetEl: Element, cardEl: Element) {
+export function computePosition(targetEl: Element, sourceEl: Element) {
   const targetRect = getBoundingClientRect(targetEl);
-  // clearRelativePosition(cardEl);
-  const cardRect = getBoundingClientRect(cardEl);
-  const offsetX = targetRect.x - cardRect.x;
-  const offsetY = targetRect.y - cardRect.y;
-  return { offsetX, offsetY, targetRect, cardRect };
+  // clearRelativePosition(sourceEl);
+  const sourceRect = getBoundingClientRect(sourceEl);
+  const offsetX = targetRect.x - sourceRect.x;
+  const offsetY = targetRect.y - sourceRect.y;
+  return { offsetX, offsetY, targetRect, sourceRect };
 }
