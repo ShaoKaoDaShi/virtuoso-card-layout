@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { debounce } from "@/utils/helpers";
 import { BasicExample } from "../examples/BasicExample";
 import { AdvancedExample } from "../examples/AdvancedExample";
 import "./App.css";
 import { CardProvider } from "@/components/common/Context";
 import { GroupCardProvider } from "@/components/common/GroupContext";
 import { useLocalStorage } from "react-use";
+import useInitScale from "@/hooks/useInitScale";
 
 /**
  * 演示应用主组件
@@ -13,6 +15,7 @@ export const App: React.FC = () => {
   const [currentExample, setCurrentExample] = useLocalStorage<
     "basic" | "advanced"
   >("currentExample", "advanced");
+  useInitScale();
 
   return (
     <div className="demo-app">

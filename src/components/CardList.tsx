@@ -113,38 +113,7 @@ export const CardList = forwardRef<HTMLDivElement, CardListProps>(
     },
     ref
   ) => {
-    const [cardPositions, setCardPositions] = useState<
-      Map<string, { x: number; y: number }>
-    >(new Map());
-    const [containerDimensions, setContainerDimensions] = useState({
-      width: 0,
-      height: 0,
-    });
     const { cardsWrappers, needRenderedCards } = useCardContext();
-    // 监听容器尺寸变化
-    useEffect(() => {
-      if (!ref || typeof ref === "function") return;
-
-      const container = ref.current;
-      if (!container) return;
-
-      const resizeObserver = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          const { width, height } = entry.contentRect;
-          setContainerDimensions({ width, height });
-        }
-      });
-
-      resizeObserver.observe(container);
-
-      // 初始化尺寸
-      const rect = container.getBoundingClientRect();
-      setContainerDimensions({ width: rect.width, height: rect.height });
-
-      return () => {
-        resizeObserver.disconnect();
-      };
-    }, [ref]);
 
     // 计算卡片位置（用于overlay策略）
     // const calculateCardPositions = useCallback(() => {

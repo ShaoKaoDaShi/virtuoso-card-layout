@@ -28,9 +28,9 @@ const Container = styled.div<{ $cssVariables: Record<string, string> }>`
       .map(([key, value]) => `${key}: ${value};`)
       .join("\n")}
 
-  @media (max-width: 768px) {
+  /* @media (max-width: 768px) {
     flex-direction: column;
-  }
+  } */
 `;
 
 const VirtuosoContainer = styled.div<{
@@ -42,13 +42,13 @@ const VirtuosoContainer = styled.div<{
       typeof props.$width === "number" ? `${props.$width}px` : props.$width};
   height: 100%;
 
-  @media (max-width: 768px) {
+  /* @media (max-width: 768px) {
     flex: 1;
     border-right: none;
     border-bottom: 1px solid var(--vc-color-border);
     margin-bottom: ${(props) =>
       typeof props.$gap === "number" ? `${props.$gap}px` : props.$gap};
-  }
+  } */
 `;
 
 const CardContainer = styled.div<{ $width: string | number }>`
@@ -57,9 +57,9 @@ const CardContainer = styled.div<{ $width: string | number }>`
       typeof props.$width === "number" ? `${props.$width}px` : props.$width};
   height: 100%;
 
-  @media (max-width: 768px) {
+  /* @media (max-width: 768px) {
     flex: 1;
-  }
+  } */
 `;
 
 /**
